@@ -27,6 +27,8 @@ export class Player {
   denfenseTemp: number = 0; //临时防御力
   nextEffect: Effect[] = []; //下回合结算的效果
 
+  danger: number = -1; //打出的攻击卡即将造成的伤害 -1表示没有打出攻击卡
+
   constructor(id: string) {
     this.id = id;
     this.allCards = cards as CardData[];
@@ -64,15 +66,8 @@ export class Player {
     }
 
     if (card?.type === "attack") {
-      if (this.room?.turnIdx === 0) {
-        this.connect?.optError("不能在首轮打出攻击牌");
-        return;
-      }
       this.attackNumOneTurn++;
-      if (this.attackNumOneTurn > 2) {
-        this.connect?.optError("一回合最多打出2张攻击卡");
-        return;
-      }
+
       const idx_2 = (zoneIndex ^ 1) as 0 | 1;
       if (this.enemy?.defenseZones[zoneIndex]) {
         this.handleAttackCard(zoneIndex, card);
@@ -122,7 +117,7 @@ export class Player {
     this.enemy?.connect?.setDefenseCard(zoneIndex, card.id);
   }
   //结算玩家打出攻击卡
-  private handleAttackCard(zoneIndex: 0 | 1, card: AttackCardData) {
+  private handleAttackCard(card: AttackCardData) {
     let danger = card.attack;
     {
       //结算连击combo
@@ -139,38 +134,22 @@ export class Player {
         }
       }
     }
-
-    {
-      //结算对敌方水晶伤害
-      let danger_ = danger;
-      if (this.enemy?.defenseZones[zoneIndex]) {
-        if (card.tag1 === "SPLASH") {
-          danger_ = Math.max(
-            0,
-            danger_ - this.enemy.defenseZones[zoneIndex].defense
-          );
-        } else {
-          danger_ = 0;
-        }
-      }
-      if (this.enemy) {
-        this.enemy.health -= danger_;
-        this.enemy.connect?.homeHurt(this.enemy.health);
-      }
+    this.danger = danger;
+    const hasDefense = this.enemy?.handCards.some(
+      (item) => item.type === "defense"
+    );
+    // 如果敌方没有防御卡，则直接结算伤害,否则等待对方打出防御卡
+    if (!hasDefense) {
+      this.flushAttack();
     }
-
-    {
-      //结算对敌方防御卡伤害
-      if (this.enemy?.defenseZones[zoneIndex]) {
-        this.enemy.defenseZones[zoneIndex].health -= danger;
-        const zoneIndex_ = zoneIndex + 2;
-        const lastHealth = this.enemy.defenseZones[zoneIndex].health;
-        this.connect?.defenseCardHurt(zoneIndex_, lastHealth);
-        this.enemy.connect?.defenseCardHurt(zoneIndex_, lastHealth);
-        if (this.enemy.defenseZones[zoneIndex].health <= 0) {
-          this.enemy.defenseZones[zoneIndex] = null;
-        }
-      }
+  }
+  flushAttack() {
+    if (this.danger !== -1 && this.enemy) {
+      this.enemy.health -= this.danger;
+      // 结算对敌方水晶伤害
+      this.connect?.homeHurt(1, this.enemy.health);
+      this.enemy.connect?.homeHurt(0, this.enemy.health);
+      this.danger = -1; // 结算后重置伤害值
     }
   }
   //策略卡结算
@@ -262,6 +241,11 @@ export class GameZoom extends EventEmitter {
       this.gameOver();
     }
   }
+
+  //打出攻击卡后等待对方打出防御卡
+  waitDefenseCard(rule: 0 | 1) {}
+  //跳过防御
+  skipDefenseCard(rule: 0 | 1) {}
   //玩家回合结束
   turnEnd(rule: 0 | 1) {
     if (this.currentPlayer !== rule) {
