@@ -1,0 +1,69 @@
+[
+  {
+    "id": 0,
+    "type": "attack",
+    "name": "SQL注入",
+    "description": "利用未过滤输入攻击数据库",
+    "attack": 4,
+    "tag1": "DIRECT_ONLY",
+    "tag2": "WEB_ATTACK",
+    "tag3": null,
+    "link": null,
+    "linkEffect": [],
+    "duration": 0
+  },
+  {
+    "id": 1,
+    "type": "attack",
+    "name": "钓鱼邮件",
+    "description": "诱导泄露信息",
+    "attack": 5,
+    "tag1": "SPLASH",
+    "tag2": "SOCIAL_ENGINEERING",
+    "tag3": null,
+    "link": null,
+    "linkEffect": [],
+    "duration": 0
+  },
+  {
+    "id": 2,
+    "type": "defense",
+    "name": "防火墙",
+    "description": "保护网络免受攻击",
+    "defense": 2,
+    "health": 2,
+    "buffTagert": null,
+    "buffEffect": []
+  },
+  {
+    "id": 3,
+    "type": "defense",
+    "name": "安全培训",
+    "description": "保护网络免受攻击",
+    "defense": 2,
+    "health": 3,
+    "buffTagert": "SOCIAL_ENGINEERING",
+    "buffEffect": [
+      {
+        "name": "d_1",
+        "args": {
+          "n": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "type": "special",
+    "name": "漏洞修复补丁",
+    "description": "恢复一个防御卡或主机2点生命值",
+    "effect": [
+      {
+        "name": "s_1",
+        "args": {
+          "n": 2
+        }
+      }
+    ]
+  }
+]
