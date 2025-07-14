@@ -119,6 +119,14 @@ export class Connect {
       })
     );
   }
+  waitDefenseCard(self: boolean, time: number) {
+    this.res.send(
+      JSON.stringify({
+        type: "waitDefenseCard",
+        data: { self, time },
+      })
+    );
+  }
   //回合结束
   turnEnd() {
     this.res.send(

@@ -64,27 +64,24 @@ export class Player {
       this.connect?.optError("本回合无法打出牌");
       return;
     }
+    if (this.danger) {
+      this.connect?.optError("等待对方打出防御卡");
+      return;
+    }
 
     if (card?.type === "attack") {
-      this.attackNumOneTurn++;
-
-      const idx_2 = (zoneIndex ^ 1) as 0 | 1;
-      if (this.enemy?.defenseZones[zoneIndex]) {
-        this.handleAttackCard(zoneIndex, card);
-      } else {
-        this.handleAttackCard(idx_2, card);
-      }
-    } else if (card.type === "defense") {
-      if (this.defenseZones[0] && this.defenseZones[1]) {
-        this.connect?.optError("防御区已满");
+      if (this.attackNumOneTurn >= 2) {
+        this.connect?.optError("一回合只能打出两张攻击卡");
         return;
       }
-      const idx_2 = (zoneIndex ^ 1) as 0 | 1;
-      if (!this.defenseZones[zoneIndex]) {
-        this.handleDefenseCard(zoneIndex, card);
-      } else {
-        this.handleDefenseCard(idx_2, card);
+      this.attackNumOneTurn++;
+      this.handleAttackCard(card);
+    } else if (card.type === "defense") {
+      if (this.enemy?.danger === -1) {
+        this.connect?.optError("防御卡只能在对方打出攻击卡后使用");
+        return;
       }
+      this.handleDefenseCard(card);
     } else if (card.type === "special") {
       const effect = card.effect;
       if (effect.some((item) => item.name === "s_1")) {
@@ -107,14 +104,13 @@ export class Player {
     this.connect?.removeCard(id);
     this.allCards.push(card);
     this.playLimitOneTurn--;
+    this.prevCard = card; // 记录上一张打出的牌
   }
   turnEnd() {}
 
   //防御卡结算
-  private handleDefenseCard(zoneIndex: 0 | 1, card: DefenseCardData) {
-    this.defenseZones[zoneIndex] = card;
-    this.connect?.setDefenseCard(zoneIndex, card.id);
-    this.enemy?.connect?.setDefenseCard(zoneIndex, card.id);
+  private handleDefenseCard(card: DefenseCardData) {
+    this.enemy?.flushAttack(card.defense);
   }
   //结算玩家打出攻击卡
   private handleAttackCard(card: AttackCardData) {
@@ -143,9 +139,9 @@ export class Player {
       this.flushAttack();
     }
   }
-  flushAttack() {
+  flushAttack(defense: number = 0) {
     if (this.danger !== -1 && this.enemy) {
-      this.enemy.health -= this.danger;
+      this.enemy.health -= Math.max(0, this.danger - defense);
       // 结算对敌方水晶伤害
       this.connect?.homeHurt(1, this.enemy.health);
       this.enemy.connect?.homeHurt(0, this.enemy.health);
@@ -206,6 +202,7 @@ export class GameZoom extends EventEmitter {
   id: string;
   currentPlayer: 0 | 1 = 0;
   timeoutTimer?: any;
+  waitTimer?: any;
   turnIdx: number = 1;
   constructor(player1: Player, player2: Player) {
     super();
@@ -231,6 +228,9 @@ export class GameZoom extends EventEmitter {
     }
     const player = rule === 0 ? this.player1 : this.player2;
     player.playCard(zoneIndex, id);
+    if (player.danger !== -1) {
+      this.waitDefenseCard();
+    }
     if (this.player1.health <= 0) {
       this.player1.connect?.gameOver("lose");
       this.player2.connect?.gameOver("win");
@@ -243,9 +243,38 @@ export class GameZoom extends EventEmitter {
   }
 
   //打出攻击卡后等待对方打出防御卡
-  waitDefenseCard(rule: 0 | 1) {}
-  //跳过防御
-  skipDefenseCard(rule: 0 | 1) {}
+  private waitDefenseCard() {
+    const player = this.currentPlayer === 0 ? this.player1 : this.player2;
+    const player_t = this.currentPlayer === 0 ? this.player2 : this.player1;
+    player.connect?.waitDefenseCard(false, 5);
+    player_t.connect?.waitDefenseCard(true, 5);
+    let timeIdx = 5;
+    this.waitTimer = setInterval(() => {
+      timeIdx--;
+      player.connect?.waitDefenseCard(false, timeIdx);
+      player_t.connect?.waitDefenseCard(true, timeIdx);
+      if (timeIdx <= 0) {
+        clearInterval(this.waitTimer);
+        this.waitTimer = undefined;
+        player.flushAttack();
+      }
+    }, 1000);
+  }
+  // 某个玩家跳过防御卡打出
+  skipDefenseCard(rule: 0 | 1) {
+    if (this.currentPlayer === rule) {
+      return;
+    }
+    if (this.waitTimer) {
+      clearInterval(this.waitTimer);
+      this.waitTimer = undefined;
+      const player = rule === 0 ? this.player1 : this.player2;
+      const player_t = rule === 0 ? this.player2 : this.player1;
+      player_t.flushAttack();
+      player.connect?.waitDefenseCard(true, 0);
+      player_t.connect?.waitDefenseCard(false, 0);
+    }
+  }
   //玩家回合结束
   turnEnd(rule: 0 | 1) {
     if (this.currentPlayer !== rule) {

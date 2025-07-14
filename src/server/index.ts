@@ -179,6 +179,19 @@ router.get("/api/turnEnd", (ctx) => {
   room.turnEnd(player.id === room.player1.id ? 0 : 1);
   ctx.body = "ok";
 });
+
+router.get("/api/skipDefenseCard", (ctx) => {
+  const user = "230250";
+  const player = game.getPlayer(user);
+  if (!player) {
+    ctx.status = 400;
+    ctx.body = "对局不存在";
+    return;
+  }
+  const room = player.room!;
+  room.skipDefenseCard(player.id === room.player1.id ? 0 : 1);
+  ctx.body = "ok";
+});
 app.use(router.routes());
 app.use(router.allowedMethods());
 const PORT = 4004;

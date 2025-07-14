@@ -38,29 +38,6 @@ export class GameManager {
       GameManager.instance = this;
     }
     {
-      //防御区初始化
-      const topDefenseContainer = new Container();
-      const bottomDefenseContainer = new Container();
-      app.stage.addChild(topDefenseContainer, bottomDefenseContainer);
-      topDefenseContainer.x = 70;
-      topDefenseContainer.y = 160;
-      bottomDefenseContainer.x = 70;
-      bottomDefenseContainer.y = 330;
-      // 创建只有边框的矩形
-      const defenseCard0 = new DefenseCard(0, 0, 0);
-      const defenseCard1 = new DefenseCard(140, 0, 1);
-      const defenseCard2 = new DefenseCard(0, 0, 2);
-      const defenseCard3 = new DefenseCard(140, 0, 3);
-      topDefenseContainer.addChild(defenseCard2, defenseCard3);
-      bottomDefenseContainer.addChild(defenseCard0, defenseCard1);
-      this.defenseZones = [
-        defenseCard0,
-        defenseCard1,
-        defenseCard2,
-        defenseCard3,
-      ];
-    }
-    {
       //手牌区初始化
       const topCardContainer = new Container();
       const bottomCardContainer = new Container();
@@ -79,6 +56,9 @@ export class GameManager {
       const health2 = new Health(30, 30, false);
       app.stage.addChild(health2);
       this.healthZones = [health1, health2];
+    }
+    {
+      //防御卡等待打出区域
     }
   }
 
@@ -101,74 +81,12 @@ export class GameManager {
         card.cardData.id +
         "&user=230250"
     );
-
-    // // 根据真实卡片类型处理效果
-    // switch (card.cardData.type) {
-    //   case "attack":
-    //     this.handleAttackCard(card, event);
-    //     break;
-    //   case "defense":
-    //     this.handleDefenseCard(card, event);
-    //     break;
-    //   case "special":
-    //     this.handleSpecialCard(card);
-    //     break;
-    //   default:
-    //     console.log("未知卡片类型");
-    // }
-    // // 从手牌移除
-    // this.removeCardFromHand(card);
   }
   drawCard(n: number) {
     throw new Error("not implemented");
   }
   showPlayer2NextCard() {
     throw new Error("not implemented");
-  }
-
-  // 处理攻击卡
-  private handleAttackCard(card: Card, event: FederatedPointerEvent) {
-    console.log(`处理攻击卡: ${card.cardData.name}`);
-    const attackCardData = card.cardData as AttackCardData;
-    const damage = attackCardData.attack || 0;
-    const defenseCard0 = this.defenseZones.find((zone) => zone.id === 0);
-    const defenseCard1 = this.defenseZones.find((zone) => zone.id === 1);
-
-    let matchDefenseCard: DefenseCardData | null = null;
-    (() => {
-      if (defenseCard0?.isEmpty && defenseCard1?.isEmpty) {
-        // return;
-        this.player2Health -= damage;
-        console.log(`造成 ${damage} 点伤害，对手血量: ${this.player2Health}`);
-        return;
-      }
-      //如果只有0号防御区有卡，或者点击在0号防御区，则攻击0号防御区
-      if (defenseCard1?.isEmpty || event.globalX <= screenWidth * 0.5) {
-        defenseCard0?.attacked(damage);
-        matchDefenseCard = defenseCard0!.defenseData!;
-        return;
-      }
-      //如果只有1号防御区有卡，或者点击在1号防御区，则攻击1号防御区
-      if (defenseCard0?.isEmpty || event.globalX > screenWidth * 0.5) {
-        defenseCard1?.attacked(damage);
-        matchDefenseCard = defenseCard1!.defenseData!;
-        return;
-      }
-    })();
-    //穿透攻击溢出伤害会同时攻击玩家和防御卡
-    if (matchDefenseCard && attackCardData.tag1 === "SPLASH") {
-      this.player2Health -= Math.max(
-        0,
-        attackCardData.attack - matchDefenseCard.defense
-      );
-    }
-
-    this.healthZones[0].update();
-    this.healthZones[1].update();
-    // 检查游戏结束
-    if (this.player2Health <= 0) {
-      console.log("游戏结束！玩家1获胜！");
-    }
   }
 
   // 处理防御卡
@@ -220,9 +138,7 @@ export class GameManager {
       });
     }
   }
-  defenseCardHurt(zoneIndex: number, lastHealth: number) {
-    this.defenseZones[zoneIndex].attacked(lastHealth);
-  }
+
   updateHealth(role: 0 | 1, health: number) {
     if (role === 0) {
       this.player1Health = health;
@@ -232,6 +148,7 @@ export class GameManager {
       this.healthZones[1].update();
     }
   }
+  waitDefenseCard(self: boolean, time: number) {}
   // 获取游戏状态（用于UI更新）
   getGameState() {
     return {

@@ -10,6 +10,7 @@ export class Card extends Graphics {
   lastDragPosGlobalX: number = 0;
   lastDragPosGlobalY: number = 0;
   cardData: CardData;
+  draggle: boolean = true; // 是否可以拖动
   constructor(x: number, y: number, cardData: CardData) {
     super();
     this.id = id++;
@@ -23,6 +24,7 @@ export class Card extends Graphics {
     this.on("touchendoutside", this.dragEnd.bind(this));
   }
   dragStart(event: FederatedPointerEvent) {
+    if (!this.draggle) return;
     this.alpha = 0.5;
     this.isDragging = true;
     console.log(this.id);
@@ -86,6 +88,7 @@ export class Card extends Graphics {
   }
 
   dragEnd(e: FederatedPointerEvent) {
+    if (!this.isDragging) return;
     // 取消防御卡区域的highlight
     const defenseZones = GameManager.getInstance().getDefenseZones();
     const zone_0 = defenseZones[0];

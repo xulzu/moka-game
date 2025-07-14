@@ -76,35 +76,14 @@ onMounted(() => {
           gameManager.pushCard(0, initData?.self?.handcards || []);
         }
         {
-          // 初始化防御卡
-          if (initData.self?.defenseCards[0] !== null) {
-            gameManager.setDefenseCard(0, initData.self?.defenseCards[0]);
-          }
-          if (initData.self?.defenseCards[1] !== null) {
-            gameManager.setDefenseCard(1, initData.self?.defenseCards[1]);
-          }
-          if (initData.enemy?.defenseCards[0] !== null) {
-            gameManager.setDefenseCard(2, initData.enemy?.defenseCards[0]);
-          }
-          if (initData.enemy?.defenseCards[1] !== null) {
-            gameManager.setDefenseCard(3, initData.enemy?.defenseCards[1]);
-          }
-        }
-        {
           // 初始化血量
           gameManager.updateHealth(0, Number(initData.self?.health || 0));
           gameManager.updateHealth(1, Number(initData.enemy?.health || 0));
         }
       } else if (data.type === "removeCard") {
         gameManager.removeCardFromHand(Number(data.data));
-      } else if (data.type === "setDefenseCard") {
-        const zoneIndex = Number(data.data.zoneIndex);
-        const id = Number(data.data.id);
-        gameManager.setDefenseCard(zoneIndex, id);
-      } else if (data.type === "defenseCardHurt") {
-        const zoneIndex = Number(data.data.zoneIndex);
-        const lastHealth = Number(data.data.lastHealth);
-        gameManager.defenseCardHurt(zoneIndex, lastHealth);
+      } else if (data.type === "waitDefenseCard") {
+        const { self, time } = data.data;
       }
     };
     sse.onerror = (event) => {
