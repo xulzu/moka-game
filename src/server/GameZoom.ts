@@ -31,12 +31,12 @@ export class Player {
 
   constructor(id: string) {
     this.id = id;
-    this.allCards = cards as CardData[];
+    this.allCards = cloneDeep(cards) as CardData[];
   }
 
   //抽牌
   drawCard(n: number) {
-    const nextCards = cloneDeep(this.allCards).splice(0, n);
+    const nextCards = this.allCards.splice(0, n);
     this.handCards.push(...(nextCards || []));
     this.connect?.drawCard(nextCards?.map((c) => c.id) || [], true);
     this.enemy?.connect?.drawCard(new Array(nextCards.length).fill(-1), false);
@@ -57,9 +57,10 @@ export class Player {
   }
   //打出牌,要负责数据校验
   playCard(zoneIndex: 0 | 1, id: number) {
-    const card = this.handCards.find((c) => c.id === id);
+    const idx = this.handCards.findIndex((c) => c.id === id);
+    const card = this.handCards[idx];
     if (!card) {
-      this.connect?.optError("牌不存在");
+      this.connect?.optError("手牌中没有该牌");
       return;
     }
 
@@ -104,7 +105,7 @@ export class Player {
     }
     this.handCards.splice(this.handCards.indexOf(card), 1);
     this.connect?.removeCard(id);
-    this.allCards.push(card);
+    this.enemy?.connect?.p2RemoveCard(idx);
     this.playLimitOneTurn--;
     this.prevCard = card; // 记录上一张打出的牌
   }
@@ -112,6 +113,13 @@ export class Player {
 
   //防御卡结算
   private handleDefenseCard(card: DefenseCardData) {
+    // 打出防御卡后，清理定时器
+    if (this.room?.waitTimer) {
+      clearInterval(this.room.waitTimer);
+      this.room.waitTimer = undefined;
+      this.connect?.waitDefenseCard(true, 0);
+      this.enemy?.connect?.waitDefenseCard(false, 0);
+    }
     this.enemy?.flushAttack(card.defense);
   }
   //结算玩家打出攻击卡
@@ -138,7 +146,7 @@ export class Player {
     );
     const test = true;
     // 如果敌方没有防御卡，则直接结算伤害,否则等待对方打出防御卡
-    if (!hasDefense || test) {
+    if (!hasDefense) {
       this.flushAttack();
     }
   }
@@ -216,24 +224,29 @@ export class GameZoom extends EventEmitter {
     this.id = createRandomId();
 
     // 游戏开始，初始化游戏状态,并开始第一回合倒计时
-    this.player1.drawCard(4);
-    this.player2.drawCard(4);
+    this.player1.drawCard(2);
+    this.player2.drawCard(2);
     if (this.player2.machine) {
       this.player2.playCard(0, 2);
     }
     this.nextTurn();
   }
   playCard(rule: 0 | 1, zoneIndex: 0 | 1, id: number) {
-    if (this.currentPlayer !== rule) {
-      const player = rule === 0 ? this.player1 : this.player2;
+    const player = rule === 0 ? this.player1 : this.player2;
+    const player_t = player.enemy!;
+    const card = player.handCards.find((c) => c.id === id);
+    if (
+      this.currentPlayer !== rule &&
+      (player_t.danger === -1 || card?.type !== "defense")
+    ) {
       player.connect?.optError("目前不是你的回合~");
       return;
     }
-    const player = rule === 0 ? this.player1 : this.player2;
     player.playCard(zoneIndex, id);
     if (player.danger !== -1) {
       this.waitDefenseCard();
     }
+
     if (this.player1.health <= 0) {
       this.player1.connect?.gameOver("lose");
       this.player2.connect?.gameOver("win");

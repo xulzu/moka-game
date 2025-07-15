@@ -129,18 +129,41 @@ export class GameManager {
       this.handCards[i].x = moveX;
     }
   }
+
+  // 从p2手牌移除卡片
+  removeCardP2(idx: number) {
+    const card = this.p2HandZone.children[idx];
+    if (!card) {
+      return;
+    }
+    this.p2HandZone.removeChild(card);
+    card.destroy();
+    this.p2HandNum--;
+    const gap = 60;
+    for (let i = idx; i < this.p2HandZone.children?.length || 0; i++) {
+      this.p2HandZone.children[i].x -= gap;
+    }
+  }
   pushCard(role: 0 | 1, cardIds: number[]) {
     if (role === 0) {
       const cards = this.allCards.filter((item) => cardIds.includes(item.id));
       let x = this.handCards.length * 60;
       cards.forEach((item) => {
+        console.log("抽牌", item.name);
         const card = new Card(x, 0, item);
         x += 60;
         this.pushHandCard(card);
         this.p1HandZone.addChild(card);
       });
     } else {
+      let x = this.p2HandNum * 60;
       this.p2HandNum += cardIds.length;
+      for (let i = 0; i < cardIds.length; i++) {
+        const card = new Card(x, 0);
+        x += 60;
+        this.p2HandZone.addChild(card);
+      }
+
       //对方玩家抽牌
     }
   }

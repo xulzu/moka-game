@@ -36,6 +36,32 @@
     "buffEffect": []
   },
   {
+    "id": 11,
+    "type": "attack",
+    "name": "钓鱼邮件2",
+    "description": "诱导泄露信息3",
+    "attack": 5,
+    "tag1": "SPLASH",
+    "tag2": "SOCIAL_ENGINEERING",
+    "tag3": null,
+    "link": null,
+    "linkEffect": [],
+    "duration": 0
+  },
+  {
+    "id": 112,
+    "type": "attack",
+    "name": "钓鱼邮件233",
+    "description": "诱导泄露信息333",
+    "attack": 5,
+    "tag1": "SPLASH",
+    "tag2": "SOCIAL_ENGINEERING",
+    "tag3": null,
+    "link": null,
+    "linkEffect": [],
+    "duration": 0
+  },
+  {
     "id": 3,
     "type": "defense",
     "name": "安全培训",

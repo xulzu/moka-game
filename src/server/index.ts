@@ -3,6 +3,8 @@ import { Connect } from "./Connect";
 import { GameZoom, Player } from "./GameZoom";
 import Koa from "koa";
 type PendingResolve = (value: string) => void;
+import cards from "./cards.json";
+import type { CardData } from "../baseType/base";
 
 class Game {
   queue: { user: string; resolve: PendingResolve }[] = [];
@@ -134,7 +136,7 @@ router.get("/sse/connect", async (ctx) => {
   const room = player.room!;
   const currentPlayer = room.currentPlayer === 0 ? room.player1 : room.player2;
   connect.initGame({
-    cards: player.allCards,
+    cards: cards as CardData[],
     self: {
       health: player.health,
       handcards: player.handCards?.map((item) => item.id) || [],

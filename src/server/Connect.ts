@@ -97,6 +97,14 @@ export class Connect {
       })
     );
   }
+  p2RemoveCard(idx: number) {
+    this.res.send(
+      JSON.stringify({
+        type: "p2RemoveCard",
+        data: idx,
+      })
+    );
+  }
   gameOver(type: "win" | "lose") {
     this.res.send(
       JSON.stringify({

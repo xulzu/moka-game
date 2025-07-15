@@ -138,8 +138,8 @@ onMounted(() => {
         const initData = data.data;
         gameManager.allCards = initData?.cards || [];
         {
-          // 初始化手牌
           gameManager.pushCard(0, initData?.self?.handcards || []);
+          gameManager.pushCard(1, initData?.enemy?.handcards || []);
         }
         {
           // 初始化血量
@@ -162,6 +162,8 @@ onMounted(() => {
         gameManager.turnIdxZone.updateTime(Number(data.data));
       } else if (data.type === "removeCard") {
         gameManager.removeCardFromHand(Number(data.data));
+      } else if (data.type === "p2RemoveCard") {
+        gameManager.removeCardP2(data.data);
       } else if (data.type === "homeHurt") {
         const lastHealth = Number(data.data.lastHealth);
         const role = Number(data.data.role);
@@ -180,6 +182,8 @@ onMounted(() => {
         } else {
           gameManager.pushCard(1, data.data);
         }
+      } else if (data.type === "gameOver") {
+        showToast(data.data == "win" ? "你赢了" : "你输了");
       }
     };
     sse.onerror = (event) => {

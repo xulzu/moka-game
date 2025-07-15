@@ -11,10 +11,20 @@ export class Card extends Graphics {
   lastDragPosGlobalY: number = 0;
   cardData: CardData;
   draggle: boolean = true; // 是否可以拖动
-  constructor(x: number, y: number, cardData: CardData) {
+
+  constructor(x: number, y: number, cardData?: CardData) {
     super();
     this.id = id++;
-    this.cardData = cardData;
+    if (cardData) {
+      this.cardData = cardData;
+    } else {
+      this.cardData = {
+        id: -1,
+        name: "背面",
+        type: "special",
+      } as CardData;
+      this.draggle = false;
+    }
     this.x = x;
     this.y = y;
     this.drawCard();
@@ -45,6 +55,7 @@ export class Card extends Graphics {
     };
     newCard
       .on("pointermove", (e) => {
+        if (!this.cardData) return;
         const pos = e.getLocalPosition(newCard.parent);
         newCard.x = pos.x - offsetX;
         newCard.y = pos.y - offsetY;
@@ -111,6 +122,14 @@ export class Card extends Graphics {
   drawCard() {
     console.log("touchend", this.id);
     this.clear();
+    if (this.cardData.id === -1) {
+      // 背面
+      this.rect(0, 0, 100, 130)
+        .stroke({ width: 1, color: "black" })
+        .fill("#db2777");
+      return;
+    }
+
     const colors = {
       attack: "#b91c1c",
       defense: "#0284c7",
