@@ -174,6 +174,12 @@ onMounted(() => {
       } else if (data.type === "waitDefenseCard") {
         selfWait.value = data.data.self;
         timeWait.value = data.data.time;
+      } else if (data.type === "drawCard") {
+        if (data.self) {
+          gameManager.pushCard(0, data.data);
+        } else {
+          gameManager.pushCard(1, data.data);
+        }
       }
     };
     sse.onerror = (event) => {
