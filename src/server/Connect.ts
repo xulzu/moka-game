@@ -24,7 +24,7 @@ export class Connect {
       handcards: number[];
       defenseCards: (number | null)[];
     };
-    turnId: string;
+    selfTurn: boolean;
   }) {
     this.res.send(
       JSON.stringify({
@@ -33,19 +33,22 @@ export class Connect {
       })
     );
   }
-  turnStart() {
+  /** 回合开始 */
+  turnStart(self: boolean) {
     this.res.send(
       JSON.stringify({
         type: "turnStart",
+        self,
       })
     );
   }
   //抽n张牌
-  drawCard(ids: number[]) {
+  drawCard(ids: number[], self: boolean) {
     this.res.send(
       JSON.stringify({
         type: "drawCard",
         data: ids,
+        self,
       })
     );
   }
@@ -68,7 +71,7 @@ export class Connect {
     );
   }
 
-  //水晶受伤
+  //水晶受伤 0自己 1对方
   homeHurt(role: 0 | 1, lastHealth: number) {
     this.res.send(
       JSON.stringify({

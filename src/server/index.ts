@@ -17,7 +17,7 @@ class Game {
     const promise = new Promise<string>((resolve, reject) => {
       resolve_ = resolve;
     });
-    const dev = true;
+    const dev = false;
     if (dev) {
       const player1 = new Player(user);
       const player2 = new Player("test");
@@ -39,7 +39,6 @@ class Game {
       const { user: p2, resolve: resolve_2 } = this.queue.shift()!;
       let player1 = new Player(user);
       let player2 = new Player(p2);
-      player2.machine = true;
       if (Math.random() < 0.5) {
         // 随机决定先手
         [player1, player2] = [player2, player1];
@@ -78,9 +77,14 @@ class Game {
 const app = new Koa();
 const router = new Router();
 const game = new Game();
+app.use((ctx, next) => {
+  ctx.user = ctx.cookies.get("user") || "";
+  return next();
+});
 
 router.get("/api/pending", async (ctx) => {
-  const user = "230250";
+  const user = ctx.query.user as string;
+  ctx.cookies.set("user", user);
   console.log(game.queue.length, "++++");
   const roomId = await game.pending(user, (cb) => {
     ctx.res.on("close", cb);
@@ -90,8 +94,8 @@ router.get("/api/pending", async (ctx) => {
 });
 
 router.get("/sse/connect", async (ctx) => {
-  console.log(222);
-  const user = "230250";
+  const user = ctx.user;
+  console.log(user, "user sse");
   const player = game.getPlayer(user);
 
   ctx.set({
@@ -128,6 +132,7 @@ router.get("/sse/connect", async (ctx) => {
   });
   player.connect = connect;
   const room = player.room!;
+  const currentPlayer = room.currentPlayer === 0 ? room.player1 : room.player2;
   connect.initGame({
     cards: player.allCards,
     self: {
@@ -143,7 +148,7 @@ router.get("/sse/connect", async (ctx) => {
       defenseCards:
         player.enemy?.defenseZones?.map((item) => item?.id || null) || [],
     },
-    turnId: room?.currentPlayer === 0 ? room.player1.id : room.player2.id,
+    selfTurn: currentPlayer.id === player.id,
   });
   ctx.res.on("close", () => {
     console.log("close", "close");
@@ -153,7 +158,7 @@ router.get("/sse/connect", async (ctx) => {
 });
 
 router.get("/api/play", (ctx) => {
-  const user = "230250";
+  const user = ctx.user;
   const player = game.getPlayer(user);
   if (!player) {
     ctx.status = 400;
@@ -168,7 +173,7 @@ router.get("/api/play", (ctx) => {
 });
 
 router.get("/api/turnEnd", (ctx) => {
-  const user = "230250";
+  const user = ctx.user;
   const player = game.getPlayer(user);
   if (!player) {
     ctx.status = 400;
@@ -177,11 +182,11 @@ router.get("/api/turnEnd", (ctx) => {
   }
   const room = player.room!;
   room.turnEnd(player.id === room.player1.id ? 0 : 1);
-  ctx.body = "ok";
+  ctx.body = player.id === room.player1.id ? 0 : 1;
 });
 
 router.get("/api/skipDefenseCard", (ctx) => {
-  const user = "230250";
+  const user = ctx.user;
   const player = game.getPlayer(user);
   if (!player) {
     ctx.status = 400;
@@ -191,6 +196,32 @@ router.get("/api/skipDefenseCard", (ctx) => {
   const room = player.room!;
   room.skipDefenseCard(player.id === room.player1.id ? 0 : 1);
   ctx.body = "ok";
+});
+router.get("/api/debug", (ctx) => {
+  const user = ctx.user;
+  const player = game.getPlayer(user);
+  if (!player) {
+    ctx.status = 400;
+    ctx.body = "对局不存在";
+    return;
+  }
+  const room = player.room!;
+  const player_t = player.enemy;
+  const currentPlayer = room.currentPlayer === 0 ? room.player1 : room.player2;
+  const res = {
+    user: player.id,
+    self: currentPlayer.id === player.id,
+    enemy: player_t?.enemy?.id,
+    currentPlayer: room.currentPlayer,
+    p1Hand: room.player1.handCards?.map((item) => item.name),
+    p2Hand: room.player2.handCards?.map((item) => item.name),
+    p1Danger: room.player1.danger,
+    p1Id: room.player1.id,
+    p2Danger: room.player2.danger,
+    p2Id: room.player2.id,
+  };
+  console.log(res, "res");
+  ctx.body = res;
 });
 app.use(router.routes());
 app.use(router.allowedMethods());

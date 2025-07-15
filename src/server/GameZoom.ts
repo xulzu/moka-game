@@ -38,7 +38,8 @@ export class Player {
   drawCard(n: number) {
     const nextCards = cloneDeep(this.allCards).splice(0, n);
     this.handCards.push(...(nextCards || []));
-    this.connect?.drawCard(nextCards?.map((c) => c.id) || []);
+    this.connect?.drawCard(nextCards?.map((c) => c.id) || [], true);
+    this.enemy?.connect?.drawCard(new Array(nextCards.length).fill(-1), false);
   }
   turnStart() {
     this.attackNumOneTurn = 0;
@@ -51,6 +52,8 @@ export class Player {
     }
     this.nextEffect = [];
     this.drawCard(2);
+    this.connect?.turnStart(true);
+    this.enemy?.connect?.turnStart(false);
   }
   //打出牌,要负责数据校验
   playCard(zoneIndex: 0 | 1, id: number) {
@@ -64,7 +67,7 @@ export class Player {
       this.connect?.optError("本回合无法打出牌");
       return;
     }
-    if (this.danger) {
+    if (this.danger !== -1) {
       this.connect?.optError("等待对方打出防御卡");
       return;
     }
@@ -100,7 +103,6 @@ export class Player {
       }
     }
     this.handCards.splice(this.handCards.indexOf(card), 1);
-    console.log(zoneIndex, id);
     this.connect?.removeCard(id);
     this.allCards.push(card);
     this.playLimitOneTurn--;
@@ -134,8 +136,9 @@ export class Player {
     const hasDefense = this.enemy?.handCards.some(
       (item) => item.type === "defense"
     );
+    const test = true;
     // 如果敌方没有防御卡，则直接结算伤害,否则等待对方打出防御卡
-    if (!hasDefense) {
+    if (!hasDefense || test) {
       this.flushAttack();
     }
   }
@@ -277,9 +280,14 @@ export class GameZoom extends EventEmitter {
   }
   //玩家回合结束
   turnEnd(rule: 0 | 1) {
+    console.log(rule, "turnEnd");
+    const player = rule === 0 ? this.player1 : this.player2;
     if (this.currentPlayer !== rule) {
-      const player = rule === 0 ? this.player1 : this.player2;
       player.connect?.optError("目前不是你的回合~");
+      return;
+    }
+    if (player.danger !== -1) {
+      player.connect?.optError("等待对方打出防御卡");
       return;
     }
     if (rule === 0) {
@@ -297,17 +305,18 @@ export class GameZoom extends EventEmitter {
     // 开始新回合，并设置超时计时
     const player = this.currentPlayer === 0 ? this.player1 : this.player2;
     const player_t = this.currentPlayer === 0 ? this.player2 : this.player1;
-
+    console.log(this.currentPlayer, "nextTurn");
     player.turnStart();
-
     const timeout = 20;
     let timeIdx = 0;
     this.timeoutTimer = setInterval(() => {
-      timeIdx++;
-      if (timeIdx >= timeout - 5) {
-        player.connect?.turnEndTimeout(timeout - timeIdx);
-        player_t.connect?.turnEndTimeout(timeout - timeIdx);
+      if (player.danger !== -1) {
+        // 如果当前回合玩家打出攻击卡正等待对方打出防御卡，则暂停倒计时，此时会有防御卡倒计时来接管
+        return;
       }
+      timeIdx++;
+      player.connect?.turnEndTimeout(timeout - timeIdx);
+      player_t.connect?.turnEndTimeout(timeout - timeIdx);
       if (timeIdx >= timeout) {
         clearInterval(this.timeoutTimer);
         // player_t?.connect?.gameOver("win");
@@ -318,6 +327,7 @@ export class GameZoom extends EventEmitter {
 
     setTimeout(() => {
       if (player.machine) {
+        console.log(this.currentPlayer, "machine");
         this.turnEnd(this.currentPlayer);
       }
     }, 1000);

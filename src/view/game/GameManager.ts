@@ -13,6 +13,7 @@ import type {
   CardData,
   DefenseCardData,
 } from "../../baseType/base";
+import { TurnIdxZone } from "./TurnIdxZone";
 
 export class GameManager {
   private static instance: GameManager;
@@ -22,12 +23,14 @@ export class GameManager {
   private player1Health: number = 20;
   private player2Health: number = 20;
   private defenseZones: DefenseCard[] = [];
-  private healthZones: Health[] = []; //[player1-HP,player2-HP]
   private app?: Application;
   handCards: Card[] = [];
+  p2HandNum: number = 0;
   p1HandZone: Container;
   p2HandZone: Container;
   allCards: CardData[] = [];
+  turnIdxZone: TurnIdxZone;
+  healthManager: Health;
   static getInstance() {
     return GameManager.instance;
   }
@@ -51,14 +54,14 @@ export class GameManager {
     }
     {
       //血量区初始化
-      const health1 = new Health(340, 620, true);
-      app.stage.addChild(health1);
-      const health2 = new Health(30, 30, false);
-      app.stage.addChild(health2);
-      this.healthZones = [health1, health2];
+      this.healthManager = new Health();
     }
     {
       //防御卡等待打出区域
+    }
+    {
+      // 回合指示区
+      this.turnIdxZone = new TurnIdxZone();
     }
   }
 
@@ -136,18 +139,12 @@ export class GameManager {
         this.pushHandCard(card);
         this.p1HandZone.addChild(card);
       });
+    } else {
+      this.p2HandNum += cardIds.length;
+      //对方玩家抽牌
     }
   }
 
-  updateHealth(role: 0 | 1, health: number) {
-    if (role === 0) {
-      this.player1Health = health;
-      this.healthZones[0].update();
-    } else {
-      this.player2Health = health;
-      this.healthZones[1].update();
-    }
-  }
   waitDefenseCard(self: boolean, time: number) {}
   // 获取游戏状态（用于UI更新）
   getGameState() {
