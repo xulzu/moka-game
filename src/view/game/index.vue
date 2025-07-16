@@ -69,6 +69,7 @@ import { onMounted, ref } from "vue";
 import type { CardData } from "../../baseType/base";
 import { showToast } from "vant";
 import axios from "axios";
+import { loadAssets } from "../utils/loadAssets";
 
 const selfTurn = ref(true);
 const time = ref(0);
@@ -81,6 +82,7 @@ onMounted(() => {
   PixiPlugin.registerPIXI(PIXI);
 
   (async () => {
+    await loadAssets();
     // Create a new application
     const app = new Application();
     initDevtools({ app });
@@ -88,6 +90,10 @@ onMounted(() => {
     // Initialize the application
     await app.init({ background: "#1099bb", resizeTo: window });
 
+    const bgSprite = new Sprite(Assets.get("bg"));
+    bgSprite.width = app.screen.width;
+    bgSprite.height = app.screen.height;
+    app.stage.addChildAt(bgSprite, 0);
     // Append the application canvas to the document body
     document.getElementById("pixi-container")!.appendChild(app.canvas);
     const gameManager = new GameManager(app);
@@ -104,29 +110,6 @@ onMounted(() => {
       } else {
         health2.value = data.health;
       }
-    });
-    // Load the bunny texture
-    const texture = await Assets.load("/assets/bunny.png");
-
-    // Create a bunny Sprite
-    const bunny = new Sprite(texture);
-
-    // Center the sprite's anchor point
-    bunny.anchor.set(0.5);
-
-    // Move the sprite to the center of the screen
-    bunny.position.set(app.screen.width / 2, app.screen.height / 2);
-
-    // Add the bunny to the stage
-    app.stage.addChild(bunny);
-
-    console.log(app.screen.width, app.screen.height);
-    // Listen for animate update
-    app.ticker.add((time) => {
-      // Just for fun, let's rotate mr rabbit a little.
-      // * Delta is 1 if running at 100% performance *
-      // * Creates frame-independent transformation *
-      bunny.rotation += 0.1 * time.deltaTime;
     });
     const sse = new EventSource("/sse/connect");
     sse.onmessage = (event) => {

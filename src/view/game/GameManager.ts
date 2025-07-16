@@ -1,8 +1,12 @@
 import {
   Application,
+  Assets,
   Container,
   FederatedEvent,
   FederatedPointerEvent,
+  Graphics,
+  Sprite,
+  Text,
 } from "pixi.js";
 import { Card } from "./Card";
 import { DefenseCard } from "./DefenseCard";
@@ -14,6 +18,7 @@ import type {
   DefenseCardData,
 } from "../../baseType/base";
 import { TurnIdxZone } from "./TurnIdxZone";
+import { Stack } from "./Stack";
 
 export class GameManager {
   private static instance: GameManager;
@@ -61,7 +66,22 @@ export class GameManager {
     }
     {
       // 回合指示区
-      this.turnIdxZone = new TurnIdxZone();
+      this.turnIdxZone = new TurnIdxZone(app);
+      app.stage.addChild(this.turnIdxZone);
+    }
+    {
+      // 初始化牌堆
+      const stack = new Stack(app);
+      const vh100 = app.screen.height;
+      const vw100 = app.screen.width;
+      stack.x = vw100 - 80;
+      stack.y = vh100 * 0.7;
+
+      const stack2 = new Stack(app);
+      stack2.x = 10;
+      stack2.y = vh100 * 0.3 - stack.height * 2;
+
+      app.stage.addChild(stack, stack2);
     }
   }
 
