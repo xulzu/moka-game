@@ -89,6 +89,13 @@ export class Connect {
       })
     );
   }
+  moreHandCard() {
+    this.res.send(
+      JSON.stringify({
+        type: "moreHandCard",
+      })
+    );
+  }
   removeCard(id: number) {
     this.res.send(
       JSON.stringify({

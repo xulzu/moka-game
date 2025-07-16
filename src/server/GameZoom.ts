@@ -34,12 +34,20 @@ export class Player {
     this.allCards = cloneDeep(cards) as CardData[];
   }
 
-  //抽牌
+  //抽牌,如果牌库没牌，则判负
   drawCard(n: number) {
-    const nextCards = this.allCards.splice(0, n);
-    this.handCards.push(...(nextCards || []));
-    this.connect?.drawCard(nextCards?.map((c) => c.id) || [], true);
-    this.enemy?.connect?.drawCard(new Array(nextCards.length).fill(-1), false);
+    if (this.allCards.length) {
+      const nextCards = this.allCards.splice(0, n);
+      this.handCards.push(...(nextCards || []));
+      this.connect?.drawCard(nextCards?.map((c) => c.id) || [], true);
+      this.enemy?.connect?.drawCard(
+        new Array(nextCards.length).fill(-1),
+        false
+      );
+    } else {
+      this.health = 0;
+      this.tryGameOver();
+    }
   }
   turnStart() {
     this.attackNumOneTurn = 0;
@@ -108,8 +116,19 @@ export class Player {
     this.enemy?.connect?.p2RemoveCard(idx);
     this.playLimitOneTurn--;
     this.prevCard = card; // 记录上一张打出的牌
+    this.tryGameOver(); // 尝试看能否结束游戏
   }
-  turnEnd() {}
+  turnEnd() {
+    if (this.handCards.length > 4) {
+      this.connect?.moreHandCard();
+      //从左到右弃牌直到手牌数量小于等于4
+      while (this.handCards.length > 4) {
+        this.connect?.removeCard(this.handCards[0].id);
+        this.enemy?.connect?.p2RemoveCard(0);
+        this.handCards.splice(0, 1);
+      }
+    }
+  }
 
   //防御卡结算
   private handleDefenseCard(card: DefenseCardData) {
@@ -204,6 +223,18 @@ export class Player {
       this.denfenseTemp += Number(effect.args.n) || 0;
     }
   }
+
+  tryGameOver() {
+    if (this.health <= 0) {
+      this.connect?.gameOver("lose");
+      this.enemy?.connect?.gameOver("win");
+      this.room?.gameOver();
+    } else if ((this.enemy?.health || 0) <= 0) {
+      this.connect?.gameOver("win");
+      this.enemy?.connect?.gameOver("lose");
+      this.room?.gameOver();
+    }
+  }
 }
 
 export class GameZoom extends EventEmitter {
@@ -246,16 +277,6 @@ export class GameZoom extends EventEmitter {
     if (player.danger !== -1) {
       this.waitDefenseCard();
     }
-
-    if (this.player1.health <= 0) {
-      this.player1.connect?.gameOver("lose");
-      this.player2.connect?.gameOver("win");
-      this.gameOver();
-    } else if (this.player2.health <= 0) {
-      this.player1.connect?.gameOver("win");
-      this.player2.connect?.gameOver("lose");
-      this.gameOver();
-    }
   }
 
   //打出攻击卡后等待对方打出防御卡
@@ -291,7 +312,7 @@ export class GameZoom extends EventEmitter {
       player_t.connect?.waitDefenseCard(false, 0);
     }
   }
-  //玩家回合结束
+  //玩家p1 or p2 回合结束
   turnEnd(rule: 0 | 1) {
     console.log(rule, "turnEnd");
     const player = rule === 0 ? this.player1 : this.player2;

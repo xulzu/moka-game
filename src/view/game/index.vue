@@ -162,6 +162,8 @@ onMounted(() => {
         gameManager.turnIdxZone.updateTime(Number(data.data));
       } else if (data.type === "removeCard") {
         gameManager.removeCardFromHand(Number(data.data));
+      } else if (data.type === "moreHandCard") {
+        showToast("手牌爆拉~");
       } else if (data.type === "p2RemoveCard") {
         gameManager.removeCardP2(data.data);
       } else if (data.type === "homeHurt") {
@@ -191,7 +193,7 @@ onMounted(() => {
     };
     sse.addEventListener("error", (event: any) => {
       sse.close();
-      showToast(event?.data);
+      showToast("连接失败，刷新试试~");
     });
   })();
 });
