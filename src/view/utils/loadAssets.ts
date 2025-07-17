@@ -18,5 +18,17 @@ export async function loadAssets() {
       alias: "stack",
       src: "/assets/stack.webp",
     },
+    {
+      alias: "card_name",
+      src: "/assets/card_name_bg.webp",
+    },
+    {
+      alias: "card_num",
+      src: "/assets/card_num.webp",
+    },
+    {
+      alias: "sql",
+      src: "/cards/sql_inject.webp",
+    },
   ]);
 }

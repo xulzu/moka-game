@@ -1,10 +1,17 @@
-import { FederatedPointerEvent, Graphics, Text } from "pixi.js";
+import {
+  Assets,
+  Container,
+  FederatedPointerEvent,
+  Graphics,
+  Sprite,
+  Text,
+} from "pixi.js";
 import { GameManager } from "./GameManager";
 import { actionDistance, screenWidth } from "./utils";
 import type { CardData } from "../../baseType/base";
 
 let id = 0;
-export class Card extends Graphics {
+export class Card extends Container {
   id: number;
   isDragging: boolean = false;
   lastDragPosGlobalX: number = 0;
@@ -27,7 +34,56 @@ export class Card extends Graphics {
     }
     this.x = x;
     this.y = y;
-    this.drawCard();
+
+    const bg = new Sprite(Assets.get("sql"));
+    bg.setSize(130, 180);
+    console.log(bg.width, bg.height);
+    this.addChild(bg);
+    {
+      // name
+      const nameContainer = new Container();
+      const nameBg = new Sprite(Assets.get("card_name"));
+      nameBg.setSize(80, 26);
+      nameContainer.addChild(nameBg);
+      nameContainer.x = 30;
+      nameContainer.y = 8;
+      const nameTxt = new Text({
+        text: this.cardData.name,
+        style: {
+          fill: "#7e22ce",
+          fontSize: 12,
+          fontWeight: "bold",
+        },
+      });
+      nameTxt.x = 12;
+      nameTxt.y = 5;
+      nameContainer.addChild(nameTxt);
+      this.addChild(nameContainer);
+    }
+    {
+      //数值
+      const numContainer = new Container();
+      const numBg = new Sprite(Assets.get("card_num"));
+      numBg.setSize(35, 35);
+      numContainer.addChild(numBg);
+      numContainer.x = 4;
+      numContainer.y = 4;
+      const txtContainer = new Container();
+      const txt = new Text({
+        text: 4,
+        style: {
+          fill: "#ffffff",
+          fontSize: 26,
+          fontWeight: "bold",
+        },
+      });
+      txtContainer.addChild(txt);
+      txtContainer.x = 9;
+      txtContainer.y = 3;
+      numContainer.addChild(txtContainer);
+      this.addChild(numContainer);
+    }
+
     this.interactive = true;
     this.on("pointerdown", this.dragStart.bind(this));
     this.on("touchend", this.dragEnd.bind(this));
@@ -117,69 +173,6 @@ export class Card extends Graphics {
     }
     if (this && !this.destroyed) {
       this.alpha = 1;
-    }
-  }
-  drawCard() {
-    console.log("touchend", this.id);
-    this.clear();
-    if (this.cardData.id === -1) {
-      // 背面
-      this.rect(0, 0, 100, 130)
-        .stroke({ width: 1, color: "black" })
-        .fill("#db2777");
-      return;
-    }
-
-    const colors = {
-      attack: "#b91c1c",
-      defense: "#0284c7",
-      special: "#f97316",
-    };
-    this.rect(0, 0, 100, 130)
-      .stroke({ width: 1, color: "black" })
-      .fill(colors[this.cardData.type]);
-    this.addChild(
-      new Text({
-        text: this.cardData.name,
-        x: 5,
-        y: 5,
-        style: {
-          fontSize: 12,
-          fontFamily: "Arial",
-          fill: "blue",
-          align: "center",
-        },
-      })
-    );
-    if (this.cardData.type === "attack") {
-      this.addChild(
-        new Text({
-          text: `攻击力: ${this.cardData.attack}`,
-          x: 5,
-          y: 30,
-          style: {
-            fontSize: 12,
-            fontFamily: "Arial",
-            fill: "blue",
-            align: "center",
-          },
-        })
-      );
-    }
-    if (this.cardData.type === "defense") {
-      this.addChild(
-        new Text({
-          text: `防御力: ${this.cardData.defense} 生命值: ${this.cardData.health}`,
-          x: 5,
-          y: 30,
-          style: {
-            fontSize: 12,
-            fontFamily: "Arial",
-            fill: "blue",
-            align: "center",
-          },
-        })
-      );
     }
   }
 }

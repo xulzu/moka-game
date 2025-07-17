@@ -33,7 +33,21 @@ export class GameManager {
   p2HandNum: number = 0;
   p1HandZone: Container;
   p2HandZone: Container;
-  allCards: CardData[] = [];
+  allCards: CardData[] = [
+    {
+      id: 0,
+      type: "attack",
+      name: "SQL注入",
+      description: "利用未过滤输入攻击数据库",
+      attack: 4,
+      tag1: "DIRECT_ONLY",
+      tag2: "WEB_ATTACK",
+      tag3: undefined,
+      link: undefined,
+      linkEffect: [],
+      duration: 0,
+    } as unknown as CardData,
+  ];
   turnIdxZone: TurnIdxZone;
   healthManager: Health;
   static getInstance() {
@@ -42,6 +56,8 @@ export class GameManager {
 
   constructor(app: Application) {
     this.app = app;
+    const vh100 = app.screen.height;
+    const vw100 = app.screen.width;
     if (!GameManager.instance) {
       GameManager.instance = this;
     }
@@ -52,8 +68,8 @@ export class GameManager {
       app.stage.addChild(topCardContainer, bottomCardContainer);
       topCardContainer.x = 0;
       topCardContainer.y = 0;
-      bottomCardContainer.x = 0;
-      bottomCardContainer.y = 530;
+      bottomCardContainer.x = 20;
+      bottomCardContainer.y = vh100 - 190;
       this.p1HandZone = bottomCardContainer;
       this.p2HandZone = topCardContainer;
     }
@@ -72,16 +88,18 @@ export class GameManager {
     {
       // 初始化牌堆
       const stack = new Stack(app);
-      const vh100 = app.screen.height;
-      const vw100 = app.screen.width;
+
       stack.x = vw100 - 80;
       stack.y = vh100 * 0.7;
 
       const stack2 = new Stack(app);
       stack2.x = 10;
       stack2.y = vh100 * 0.3 - stack.height * 2;
-
       app.stage.addChild(stack, stack2);
+    }
+    {
+      //test
+      this.pushCard(0, [0]);
     }
   }
 
@@ -169,7 +187,6 @@ export class GameManager {
       const cards = this.allCards.filter((item) => cardIds.includes(item.id));
       let x = this.handCards.length * 60;
       cards.forEach((item) => {
-        console.log("抽牌", item.name);
         const card = new Card(x, 0, item);
         x += 60;
         this.pushHandCard(card);
