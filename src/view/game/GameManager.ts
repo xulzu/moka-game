@@ -69,7 +69,7 @@ export class GameManager {
       topCardContainer.x = 0;
       topCardContainer.y = 0;
       bottomCardContainer.x = 20;
-      bottomCardContainer.y = vh100 - 190;
+      bottomCardContainer.y = vh100 - 180;
       this.p1HandZone = bottomCardContainer;
       this.p2HandZone = topCardContainer;
     }
@@ -99,7 +99,7 @@ export class GameManager {
     }
     {
       //test
-      this.pushCard(0, [0]);
+      this.pushCard(0, [0, 0, 0, 0, 0, 0]);
     }
   }
 
@@ -184,14 +184,18 @@ export class GameManager {
   }
   pushCard(role: 0 | 1, cardIds: number[]) {
     if (role === 0) {
-      const cards = this.allCards.filter((item) => cardIds.includes(item.id));
       let x = this.handCards.length * 60;
-      cards.forEach((item) => {
-        const card = new Card(x, 0, item);
-        x += 60;
+      if (x === 0) {
+        x = Card.width / 2;
+      }
+      cardIds.forEach((item) => {
+        const cardData = this.allCards.find((card) => card.id === item);
+        const card = new Card(x, Card.height, cardData);
+        x += 40;
         this.pushHandCard(card);
         this.p1HandZone.addChild(card);
       });
+      this.updateHandPos();
     } else {
       let x = this.p2HandNum * 60;
       this.p2HandNum += cardIds.length;
@@ -202,6 +206,31 @@ export class GameManager {
       }
 
       //对方玩家抽牌
+    }
+  }
+  updateHandPos() {
+    const gap = 40;
+    const hw = Card.width + (this.handCards.length - 1) * gap;
+    const ew = this.app!.screen.width - hw;
+    this.p1HandZone.x = ew / 2;
+
+    const maxAngle = 30;
+    const length = this.p1HandZone.children.length;
+    const sw = this.app!.screen.width;
+    const sh = this.app!.screen.height;
+    const r = sw;
+    const cx = sw / 2;
+    const cy = sh / 2;
+
+    for (let i = 0; i < length; i++) {
+      const child = this.p1HandZone.children[i];
+      const t = i / (length - 1);
+      const angle = (t - 0.5) * maxAngle;
+      child.angle = angle;
+      const rad = (angle * Math.PI) / 180;
+      const x = cx + r * Math.sin(rad);
+      const y = cy - r * (1 - Math.cos(rad));
+      console.log(angle);
     }
   }
 

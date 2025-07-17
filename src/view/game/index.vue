@@ -24,12 +24,12 @@
     >
       {{ health2 }}
     </div>
-    <div
+    <!-- <div
       @click="debug"
       class="fixed z-2 bottom-[25vh] left-[50vw] -translate-x-[50%] flex items-center justify-center h-[50px] w-[50px] bg-green-500 rounded-[4px]"
     >
       {{ health1 }}
-    </div>
+    </div> -->
 
     <div
       v-if="timeWait > 0"
@@ -88,7 +88,12 @@ onMounted(() => {
     initDevtools({ app });
 
     // Initialize the application
-    await app.init({ background: "#1099bb", resizeTo: window });
+    await app.init({
+      background: "#1099bb",
+      resizeTo: window,
+      resolution: window.devicePixelRatio,
+      autoDensity: true,
+    });
 
     const bgSprite = new Sprite(Assets.get("bg"));
     bgSprite.width = app.screen.width;

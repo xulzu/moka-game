@@ -12,6 +12,8 @@ import type { CardData } from "../../baseType/base";
 
 let id = 0;
 export class Card extends Container {
+  static width = 110;
+  static height = 160;
   id: number;
   isDragging: boolean = false;
   lastDragPosGlobalX: number = 0;
@@ -24,6 +26,7 @@ export class Card extends Container {
     this.id = id++;
     if (cardData) {
       this.cardData = cardData;
+      this.pivot.set(Card.width / 2, Card.height);
     } else {
       this.cardData = {
         id: -1,
@@ -36,27 +39,27 @@ export class Card extends Container {
     this.y = y;
 
     const bg = new Sprite(Assets.get("sql"));
-    bg.setSize(130, 180);
+    bg.setSize(Card.width, Card.height);
     console.log(bg.width, bg.height);
     this.addChild(bg);
     {
       // name
       const nameContainer = new Container();
       const nameBg = new Sprite(Assets.get("card_name"));
-      nameBg.setSize(80, 26);
+      nameBg.setSize(70, 22);
       nameContainer.addChild(nameBg);
-      nameContainer.x = 30;
-      nameContainer.y = 8;
+      nameContainer.x = 24;
+      nameContainer.y = 7;
       const nameTxt = new Text({
         text: this.cardData.name,
         style: {
-          fill: "#7e22ce",
+          fill: "#581c87",
           fontSize: 12,
-          fontWeight: "bold",
+          // fontWeight: "bold",
         },
       });
       nameTxt.x = 12;
-      nameTxt.y = 5;
+      nameTxt.y = 4;
       nameContainer.addChild(nameTxt);
       this.addChild(nameContainer);
     }
@@ -64,7 +67,7 @@ export class Card extends Container {
       //数值
       const numContainer = new Container();
       const numBg = new Sprite(Assets.get("card_num"));
-      numBg.setSize(35, 35);
+      numBg.setSize(28, 28);
       numContainer.addChild(numBg);
       numContainer.x = 4;
       numContainer.y = 4;
@@ -73,12 +76,12 @@ export class Card extends Container {
         text: 4,
         style: {
           fill: "#ffffff",
-          fontSize: 26,
+          fontSize: 19,
           fontWeight: "bold",
         },
       });
       txtContainer.addChild(txt);
-      txtContainer.x = 9;
+      txtContainer.x = 8;
       txtContainer.y = 3;
       numContainer.addChild(txtContainer);
       this.addChild(numContainer);
