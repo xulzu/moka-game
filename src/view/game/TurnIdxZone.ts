@@ -9,24 +9,22 @@ import {
 import mitt from "mitt";
 //回合指示区
 export class TurnIdxZone extends Container {
+  static width = 75;
   emitter = mitt<{
     toggle: boolean; // true切换到自己的回合 false切换到对方的回合
     updateTime: number;
     finish: void;
   }>();
-  app: Application;
   txtContainer: Container;
 
-  constructor(app: Application) {
+  constructor() {
     super();
-    this.app = app;
     const turnSprite = new Sprite(Assets.get("selfTurn"));
-    const size = 75;
+    const size = TurnIdxZone.width;
     turnSprite.width = size;
     turnSprite.height =
       size * (turnSprite.texture.height / turnSprite.texture.width);
-    turnSprite.x = app.screen.width - size;
-    turnSprite.y = app.screen.height / 2 - size - 10;
+
     const timer = new Container();
     timer.x = turnSprite.x + 15;
     timer.y = turnSprite.y + turnSprite.height + 5;

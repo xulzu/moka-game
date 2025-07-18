@@ -19,6 +19,8 @@ import type {
 } from "../../baseType/base";
 import { TurnIdxZone } from "./TurnIdxZone";
 import { Stack } from "./Stack";
+import { cloneDeep } from "lodash-es";
+import { ActiveZone } from "./ActiveZone";
 
 export class GameManager {
   private static instance: GameManager;
@@ -28,16 +30,18 @@ export class GameManager {
   private player1Health: number = 20;
   private player2Health: number = 20;
   private defenseZones: DefenseCard[] = [];
-  private app?: Application;
+  app?: Application;
   handCards: Card[] = [];
   p2HandNum: number = 0;
   p1HandZone: Container;
   p2HandZone: Container;
+  activeZone: ActiveZone;
   allCards: CardData[] = [
     {
       id: 0,
       type: "attack",
       name: "SQL注入",
+      bg: "sql_inject",
       description: "利用未过滤输入攻击数据库",
       attack: 4,
       tag1: "DIRECT_ONLY",
@@ -47,9 +51,59 @@ export class GameManager {
       linkEffect: [],
       duration: 0,
     } as unknown as CardData,
+    {
+      id: 11,
+      type: "attack",
+      name: "钓鱼邮件",
+      description: "诱导泄露信息",
+      attack: 5,
+      _tempAttack: 3,
+      bg: "dyyj",
+      tag1: "SPLASH",
+      tag2: "SOCIAL_ENGINEERING",
+      tag3: null,
+      link: null,
+      linkEffect: [],
+      duration: 0,
+    } as unknown as CardData,
+    {
+      id: 1,
+      type: "defense",
+      name: "安全培训",
+      bg: "px1",
+      description: "保护网络免受攻击",
+      defense: 2,
+      health: 3,
+      _tempDefense: 0,
+      buffTagert: "SOCIAL_ENGINEERING",
+      buffEffect: [
+        {
+          name: "d_1",
+          args: {
+            n: 1,
+          },
+        },
+      ],
+    },
+    {
+      id: 2,
+      type: "special",
+      bg: "ldxf",
+      name: "漏洞修复补丁",
+      description: "恢复一个防御卡或主机2点生命值",
+      effect: [
+        {
+          name: "s_1",
+          args: {
+            n: 2,
+          },
+        },
+      ],
+    },
   ];
   turnIdxZone: TurnIdxZone;
-  healthManager: Health;
+  healthZoneP1: Container;
+  healthZoneP2: Container;
   static getInstance() {
     return GameManager.instance;
   }
@@ -62,44 +116,62 @@ export class GameManager {
       GameManager.instance = this;
     }
     {
-      //手牌区初始化
-      const topCardContainer = new Container();
-      const bottomCardContainer = new Container();
-      app.stage.addChild(topCardContainer, bottomCardContainer);
-      topCardContainer.x = 0;
-      topCardContainer.y = 0;
-      bottomCardContainer.x = 20;
-      bottomCardContainer.y = vh100 - 180;
-      this.p1HandZone = bottomCardContainer;
-      this.p2HandZone = topCardContainer;
-    }
-    {
-      //血量区初始化
-      this.healthManager = new Health();
-    }
-    {
-      //防御卡等待打出区域
-    }
-    {
-      // 回合指示区
-      this.turnIdxZone = new TurnIdxZone(app);
-      app.stage.addChild(this.turnIdxZone);
+      this.activeZone = new ActiveZone();
+      this.activeZone.x = vw100 / 2 - ActiveZone.width / 2;
+      this.activeZone.y = vh100 / 2 - ActiveZone.width / 2 - 30;
+      app.stage.addChild(this.activeZone);
     }
     {
       // 初始化牌堆
       const stack = new Stack(app);
 
-      stack.x = vw100 - 80;
-      stack.y = vh100 * 0.7;
+      stack.x = vw100 - 70;
+      stack.y = vh100 - 240;
 
       const stack2 = new Stack(app);
-      stack2.x = 10;
-      stack2.y = vh100 * 0.3 - stack.height * 2;
+      stack2.x = 2;
+      stack2.y = 88;
       app.stage.addChild(stack, stack2);
     }
     {
+      //血量区初始化
+      this.healthZoneP1 = new Health();
+      this.healthZoneP2 = new Health();
+      this.healthZoneP1.x = vw100 / 2 - Health.width / 2;
+      this.healthZoneP1.y = vh100 - 270;
+      this.healthZoneP2.x = vw100 / 2 - Health.width / 2;
+      this.healthZoneP2.y = 120;
+
+      app.stage.addChild(this.healthZoneP1, this.healthZoneP2);
+    }
+    {
+      // 回合指示区
+      this.turnIdxZone = new TurnIdxZone();
+      this.turnIdxZone.x = vw100 - TurnIdxZone.width;
+      this.turnIdxZone.y = vh100 / 2 - TurnIdxZone.width - 40;
+      app.stage.addChild(this.turnIdxZone);
+    }
+    {
+      //手牌区初始化
+      const topCardContainer = new Container();
+      const bottomCardContainer = new Container();
+      app.stage.addChild(topCardContainer, bottomCardContainer);
+      topCardContainer.x = 0;
+      topCardContainer.y = -50;
+      bottomCardContainer.x = 20;
+      bottomCardContainer.y = vh100 - 180;
+      this.p1HandZone = bottomCardContainer;
+      this.p2HandZone = topCardContainer;
+    }
+
+    {
+      //防御卡等待打出区域
+    }
+
+    {
       //test
-      this.pushCard(0, [0, 0, 0, 0, 0, 0]);
+      this.pushCard(0, [0, 0, 0, 2]);
+      this.pushCard(1, [0, 0, 0, 0, 0, 0]);
     }
   }
 
@@ -182,56 +254,95 @@ export class GameManager {
       this.p2HandZone.children[i].x -= gap;
     }
   }
+  // 抽牌 0 自己 1 对方
   pushCard(role: 0 | 1, cardIds: number[]) {
     if (role === 0) {
-      let x = this.handCards.length * 60;
+      const p1Gap = 40;
+      let x = this.handCards.length * p1Gap;
       if (x === 0) {
         x = Card.width / 2;
       }
       cardIds.forEach((item) => {
         const cardData = this.allCards.find((card) => card.id === item);
-        const card = new Card(x, Card.height, cardData);
-        x += 40;
+        const card = new Card(x, Card.height, cloneDeep(cardData));
+        x += p1Gap;
         this.pushHandCard(card);
         this.p1HandZone.addChild(card);
       });
-      this.updateHandPos();
+      this.updateP1HandPos();
     } else {
-      let x = this.p2HandNum * 60;
+      const p2Gap = 40;
+      let x = this.p2HandNum * p2Gap;
+      if (x === 0) {
+        x = Card.width / 2;
+      }
       this.p2HandNum += cardIds.length;
       for (let i = 0; i < cardIds.length; i++) {
         const card = new Card(x, 0);
-        x += 60;
+        x += p2Gap;
         this.p2HandZone.addChild(card);
       }
-
-      //对方玩家抽牌
+      this.updateP2HandPos();
     }
   }
-  updateHandPos() {
+  //更新自己手牌的位置，扇形排列
+  updateP1HandPos() {
     const gap = 40;
     const hw = Card.width + (this.handCards.length - 1) * gap;
     const ew = this.app!.screen.width - hw;
     this.p1HandZone.x = ew / 2;
+    console.log(hw, "p1w");
 
-    const maxAngle = 30;
+    const maxAngles = [0, 0, 15, 20, 25, 30, 30, 30];
+    const maxYs = [0, 0, 10, 10, 14, 18, 50, 50];
+
+    const maxAngle = maxAngles[this.handCards.length] || 30;
     const length = this.p1HandZone.children.length;
-    const sw = this.app!.screen.width;
-    const sh = this.app!.screen.height;
-    const r = sw;
-    const cx = sw / 2;
-    const cy = sh / 2;
-
-    for (let i = 0; i < length; i++) {
+    let diff = 0;
+    // 如果只有一张牌，则不进行计算
+    for (let i = 0; i < length && length > 1; i++) {
       const child = this.p1HandZone.children[i];
       const t = i / (length - 1);
       const angle = (t - 0.5) * maxAngle;
       child.angle = angle;
-      const rad = (angle * Math.PI) / 180;
-      const x = cx + r * Math.sin(rad);
-      const y = cy - r * (1 - Math.cos(rad));
-      console.log(angle);
+      const rad = ((t - 0.5) * 90 * Math.PI) / 180;
+      const cosValue = Math.cos(rad);
+      const ny = cosValue * (maxYs[this.handCards.length] || 30);
+      if (i === 0) {
+        diff = ny;
+      }
+      child.y -= ny - diff;
     }
+  }
+  //更新对方手牌的位置，扇形排列
+  updateP2HandPos() {
+    const maxAngles = [0, 0, 6, 10, 14, 16, 20, 20];
+    const maxYs = [0, 0, 20, 10, 14, 18, 50, 50];
+    const maxAngle = maxAngles[this.p2HandNum] || 30;
+    const length = this.p2HandNum;
+    let diff = 0;
+    // 如果只有一张牌，则不进行计算
+    for (let i = 0; i < length && length > 1; i++) {
+      const child = this.p2HandZone.children[i];
+      const t = i / (length - 1);
+      const angle = (t - 0.5) * maxAngle;
+      child.angle = -angle;
+      const rad = ((t - 0.5) * 90 * Math.PI) / 180;
+      const cosValue = Math.cos(rad);
+      const ny = cosValue * (maxYs[this.p2HandNum] || 30);
+      if (i === 0) {
+        diff = ny;
+      }
+      child.y += ny - diff;
+    }
+
+    const gap = 40;
+    const hw = Card.width + (this.p2HandNum - 1) * gap;
+    const scale = 0.9;
+    this.p2HandZone.scale.set(scale);
+    const ew = this.app!.screen.width - hw * scale;
+    this.p2HandZone.x = ew / 2;
+    console.log(this.p2HandZone.width, "p2w");
   }
 
   waitDefenseCard(self: boolean, time: number) {}

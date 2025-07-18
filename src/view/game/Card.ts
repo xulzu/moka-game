@@ -20,13 +20,59 @@ export class Card extends Container {
   lastDragPosGlobalY: number = 0;
   cardData: CardData;
   draggle: boolean = true; // 是否可以拖动
-
+  moveCard?: Container;
+  txtContainer?: Container;
+  playDistance: number = 0;
   constructor(x: number, y: number, cardData?: CardData) {
     super();
     this.id = id++;
     if (cardData) {
       this.cardData = cardData;
       this.pivot.set(Card.width / 2, Card.height);
+      const bgt = Assets.get(cardData.bg);
+      if (bgt) {
+        const bg = new Sprite(bgt);
+        bg.setSize(Card.width, Card.height);
+        this.addChild(bg);
+      } else {
+        this.trySetBg();
+      }
+      {
+        // name
+        const nameContainer = new Container();
+        const nameBg = new Sprite(Assets.get("card_name"));
+        nameBg.setSize(78, 22);
+        nameContainer.addChild(nameBg);
+        nameContainer.x = 24;
+        nameContainer.y = 7;
+        const nameTxt = new Text({
+          text: this.cardData.name,
+          style: {
+            fill: "#581c87",
+            fontSize: 11,
+          },
+        });
+        nameTxt.x = 10;
+        nameTxt.y = 4;
+        nameContainer.addChild(nameTxt);
+        this.addChild(nameContainer);
+      }
+      {
+        //数值
+        const numContainer = new Container();
+        const numBg = new Sprite(Assets.get("card_num"));
+        numBg.setSize(28, 28);
+        numContainer.addChild(numBg);
+        numContainer.x = 4;
+        numContainer.y = 4;
+        const txtContainer = new Container();
+        this.txtContainer = txtContainer;
+        txtContainer.x = 8;
+        txtContainer.y = 3;
+        numContainer.addChild(txtContainer);
+        this.addChild(numContainer);
+        this.updateNum();
+      }
     } else {
       this.cardData = {
         id: -1,
@@ -34,63 +80,64 @@ export class Card extends Container {
         type: "special",
       } as CardData;
       this.draggle = false;
+      this.pivot.set(Card.width / 2, 0);
+
+      const bg = new Sprite(Assets.get("card_back"));
+      bg.setSize(Card.width, Card.height);
+      this.addChild(bg);
     }
     this.x = x;
     this.y = y;
 
-    const bg = new Sprite(Assets.get("sql"));
-    bg.setSize(Card.width, Card.height);
-    console.log(bg.width, bg.height);
-    this.addChild(bg);
-    {
-      // name
-      const nameContainer = new Container();
-      const nameBg = new Sprite(Assets.get("card_name"));
-      nameBg.setSize(70, 22);
-      nameContainer.addChild(nameBg);
-      nameContainer.x = 24;
-      nameContainer.y = 7;
-      const nameTxt = new Text({
-        text: this.cardData.name,
-        style: {
-          fill: "#581c87",
-          fontSize: 12,
-          // fontWeight: "bold",
-        },
-      });
-      nameTxt.x = 12;
-      nameTxt.y = 4;
-      nameContainer.addChild(nameTxt);
-      this.addChild(nameContainer);
-    }
-    {
-      //数值
-      const numContainer = new Container();
-      const numBg = new Sprite(Assets.get("card_num"));
-      numBg.setSize(28, 28);
-      numContainer.addChild(numBg);
-      numContainer.x = 4;
-      numContainer.y = 4;
-      const txtContainer = new Container();
-      const txt = new Text({
-        text: 4,
-        style: {
-          fill: "#ffffff",
-          fontSize: 19,
-          fontWeight: "bold",
-        },
-      });
-      txtContainer.addChild(txt);
-      txtContainer.x = 8;
-      txtContainer.y = 3;
-      numContainer.addChild(txtContainer);
-      this.addChild(numContainer);
-    }
-
     this.interactive = true;
+    const gameManager = GameManager.getInstance();
+    const vh100 = gameManager.app?.screen.height || 0;
+    this.playDistance = vh100 - Card.height - 10;
     this.on("pointerdown", this.dragStart.bind(this));
-    this.on("touchend", this.dragEnd.bind(this));
-    this.on("touchendoutside", this.dragEnd.bind(this));
+    this.on("pointerup", this.dragEnd.bind(this));
+    this.on("pointerupoutside", this.dragEnd.bind(this));
+  }
+  async trySetBg() {
+    const bg = await Assets.load(this.cardData.bg).catch(() => null);
+    if (bg) {
+      const bgSprite = new Sprite(bg);
+      bgSprite.setSize(Card.width, Card.height);
+      this.addChild(bgSprite);
+    } else {
+      const bg = new Sprite(Assets.get("card_back"));
+      bg.setSize(Card.width, Card.height);
+      this.addChild(bg);
+    }
+  }
+  // 更新数值
+  updateNum() {
+    this.txtContainer?.removeChildren();
+    let num = "~";
+    let color = "#ffffff";
+    if (this.cardData.type === "attack") {
+      num = (
+        this.cardData.attack + (this.cardData._tempAttack || 0)
+      ).toString();
+      if (this.cardData._tempAttack) {
+        color = "#881337";
+      }
+    } else if (this.cardData.type === "defense") {
+      num = (
+        this.cardData.defense + (this.cardData._tempDefense || 0)
+      ).toString();
+      if (this.cardData._tempDefense) {
+        color = "#064e3b";
+      }
+    }
+    const txt = new Text({
+      text: num,
+      style: {
+        fill: color,
+        fontSize: 19,
+        fontWeight: "bold",
+      },
+    });
+    this.txtContainer?.addChild(txt);
   }
   dragStart(event: FederatedPointerEvent) {
     if (!this.draggle) return;
@@ -99,6 +146,7 @@ export class Card extends Container {
     console.log(this.id);
     const newCard = new Card(this.x, this.y, this.cardData);
     this.parent.addChild(newCard);
+    this.moveCard = newCard;
     const offset = event.getLocalPosition(this.parent);
     const offsetX = offset.x - this.x;
     const offsetY = offset.y - this.y;
@@ -109,8 +157,11 @@ export class Card extends Container {
 
       this.lastDragPosGlobalX = e.x;
       this.lastDragPosGlobalY = e.y;
-      this.parent.removeChild(newCard);
-      newCard.destroy();
+      if (this.moveCard) {
+        this.parent.removeChild(this.moveCard);
+        this.moveCard.destroy();
+        this.moveCard = undefined;
+      }
     };
     newCard
       .on("pointermove", (e) => {
@@ -118,38 +169,11 @@ export class Card extends Container {
         const pos = e.getLocalPosition(newCard.parent);
         newCard.x = pos.x - offsetX;
         newCard.y = pos.y - offsetY;
-        const defenseZones = GameManager.getInstance().getDefenseZones();
-        const zone_0 = defenseZones[0];
-        const zone_1 = defenseZones[1];
-
-        const zone_2 = defenseZones[2];
-        const zone_3 = defenseZones[3];
-
-        if (this.cardData.type === "defense" && e.globalY <= actionDistance) {
-          // 优先放左侧
-          if (zone_0?.isEmpty) {
-            zone_0?.highlight(true);
-            zone_1?.highlight(false);
-          } else if (zone_1?.isEmpty) {
-            zone_0?.highlight(false);
-            zone_1?.highlight(true);
-          }
-        } else if (
-          this.cardData.type === "attack" &&
-          e.globalY <= actionDistance
-        ) {
-          if (!zone_2?.isEmpty && e.globalX < screenWidth / 2) {
-            zone_2?.highlight(true);
-            zone_3?.highlight(false);
-          } else if (!zone_3?.isEmpty && e.globalX > screenWidth / 2) {
-            zone_2?.highlight(false);
-            zone_3?.highlight(true);
-          }
+        const gameManager = GameManager.getInstance();
+        if (e.globalY <= this.playDistance) {
+          gameManager.activeZone.show();
         } else {
-          zone_0?.highlight(false);
-          zone_1?.highlight(false);
-          zone_2?.highlight(false);
-          zone_3?.highlight(false);
+          gameManager.activeZone.hide();
         }
       })
       .on("pointerup", newCardDragEnd)
@@ -159,23 +183,20 @@ export class Card extends Container {
 
   dragEnd(e: FederatedPointerEvent) {
     if (!this.isDragging) return;
-    // 取消防御卡区域的highlight
-    const defenseZones = GameManager.getInstance().getDefenseZones();
-    const zone_0 = defenseZones[0];
-    const zone_1 = defenseZones[1];
-    const zone_2 = defenseZones[2];
-    const zone_3 = defenseZones[3];
-    zone_0?.highlight(false);
-    zone_1?.highlight(false);
-    zone_2?.highlight(false);
-    zone_3?.highlight(false);
-    this.isDragging = false;
+    // 显示/隐藏打出区域
     const gameManager = GameManager.getInstance();
-    if (this.lastDragPosGlobalY <= actionDistance) {
+    gameManager.activeZone.hide();
+    this.isDragging = false;
+    if (this.lastDragPosGlobalY <= this.playDistance) {
       gameManager.playCard(this, e);
     }
-    if (this && !this.destroyed) {
+    if (!this.destroyed) {
       this.alpha = 1;
+    }
+    if (this.moveCard) {
+      this.parent.removeChild(this.moveCard);
+      this.moveCard.destroy();
+      this.moveCard = undefined;
     }
   }
 }

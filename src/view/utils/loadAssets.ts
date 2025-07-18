@@ -27,8 +27,80 @@ export async function loadAssets() {
       src: "/assets/card_num.webp",
     },
     {
-      alias: "sql",
+      alias: "aq1",
+      src: "/cards/aq1.webp",
+    },
+    {
+      alias: "aqjc",
+      src: "/cards/aqjc.webp",
+    },
+    {
+      alias: "bdsj",
+      src: "/cards/bdsj.webp",
+    },
+    {
+      alias: "dw",
+      src: "/cards/dw.webp",
+    },
+    {
+      alias: "dyyj",
+      src: "/cards/dyyj.webp",
+    },
+    {
+      alias: "eygg",
+      src: "/cards/eygg.webp",
+    },
+    {
+      alias: "ldxf",
+      src: "/cards/ldxf.webp",
+    },
+    {
+      alias: "px1",
+      src: "/cards/px1.webp",
+    },
+    {
+      alias: "qbfx",
+      src: "/cards/qbfx.webp",
+    },
+    {
+      alias: "ruokouling",
+      src: "/cards/ruokouling.webp",
+    },
+    {
+      alias: "up_root",
+      src: "/cards/up_root.webp",
+    },
+    {
+      alias: "waf_update",
+      src: "/cards/waf_update.webp",
+    },
+    {
+      alias: "waf",
+      src: "/cards/waf.webp",
+    },
+    {
+      alias: "xss",
+      src: "/cards/xss.webp",
+    },
+    {
+      alias: "sql_inject",
       src: "/cards/sql_inject.webp",
+    },
+    {
+      alias: "card_back",
+      src: "/assets/card_back.webp",
+    },
+    {
+      alias: "user_ico",
+      src: "/assets/user_ico.webp",
+    },
+    {
+      alias: "health_bg",
+      src: "/assets/health.webp",
+    },
+    {
+      alias: "active-bg",
+      src: "/assets/active-bg.webp",
     },
   ]);
 }

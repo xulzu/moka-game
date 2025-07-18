@@ -11,6 +11,7 @@ export interface AttackCardData {
   type: "attack";
   name: string;
   description: string;
+  bg: string; // 背景图片
 
   attack: number;
   _tempAttack?: number; //临时攻击力
@@ -26,6 +27,7 @@ export interface DefenseCardData {
   id: number;
   type: "defense";
   name: string;
+  bg: string; // 背景图片
   description: string;
 
   defense: number;
@@ -39,6 +41,7 @@ export interface SpecialCardData {
   type: "special";
   name: string;
   description: string;
+  bg: string; // 背景图片
 
   effect: Effect[];
 }

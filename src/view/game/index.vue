@@ -19,17 +19,6 @@
       </div>
       <div class="text-white text-center">t:{{ time }}</div>
     </div>
-    <div
-      class="fixed z-2 top-[25vh] left-[50vw] -translate-x-[50%] flex items-center justify-center h-[50px] w-[50px] bg-green-500 rounded-[4px]"
-    >
-      {{ health2 }}
-    </div>
-    <!-- <div
-      @click="debug"
-      class="fixed z-2 bottom-[25vh] left-[50vw] -translate-x-[50%] flex items-center justify-center h-[50px] w-[50px] bg-green-500 rounded-[4px]"
-    >
-      {{ health1 }}
-    </div> -->
 
     <div
       v-if="timeWait > 0"
@@ -108,13 +97,6 @@ onMounted(() => {
     });
     gameManager.turnIdxZone.emitter.on("updateTime", (time_) => {
       time.value = time_;
-    });
-    gameManager.healthManager.emitter.on("updateHealth", (data) => {
-      if (data.self) {
-        health1.value = data.health;
-      } else {
-        health2.value = data.health;
-      }
     });
     const sse = new EventSource("/sse/connect");
     sse.onmessage = (event) => {
