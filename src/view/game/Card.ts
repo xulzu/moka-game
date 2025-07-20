@@ -21,8 +21,11 @@ export class Card extends Container {
   cardData: CardData;
   draggle: boolean = true; // 是否可以拖动
   moveCard?: Container;
+  detailCard?: Container;
   txtContainer?: Container;
+  detailTimer?: any;
   playDistance: number = 0;
+  romveDetailStep = 0;
   constructor(x: number, y: number, cardData?: CardData) {
     super();
     this.id = id++;
@@ -140,6 +143,11 @@ export class Card extends Container {
     this.txtContainer?.addChild(txt);
   }
   dragStart(event: FederatedPointerEvent) {
+    this.clearDetail();
+    this.detailTimer = setTimeout(() => {
+      this.showDetail();
+    }, 500);
+
     if (!this.draggle) return;
     this.alpha = 0.5;
     this.isDragging = true;
@@ -157,11 +165,7 @@ export class Card extends Container {
 
       this.lastDragPosGlobalX = e.x;
       this.lastDragPosGlobalY = e.y;
-      if (this.moveCard) {
-        this.parent.removeChild(this.moveCard);
-        this.moveCard.destroy();
-        this.moveCard = undefined;
-      }
+      this.clearMoveCard();
     };
     newCard
       .on("pointermove", (e) => {
@@ -172,6 +176,7 @@ export class Card extends Container {
         const gameManager = GameManager.getInstance();
         if (e.globalY <= this.playDistance) {
           gameManager.activeZone.show();
+          this.clearDetail();
         } else {
           gameManager.activeZone.hide();
         }
@@ -193,10 +198,39 @@ export class Card extends Container {
     if (!this.destroyed) {
       this.alpha = 1;
     }
+    this.clearMoveCard();
+    this.clearDetail();
+  }
+  clearMoveCard() {
     if (this.moveCard) {
       this.parent.removeChild(this.moveCard);
       this.moveCard.destroy();
       this.moveCard = undefined;
     }
+  }
+
+  showDetail() {
+    const detail = new Card(0, 0, this.cardData);
+    detail.pivot.set(0, 0);
+    const w = 190;
+    detail.setSize(w, w * (Card.height / Card.width));
+    const vw = GameManager.getInstance().app?.screen.width || 0;
+    const vh = GameManager.getInstance().app?.screen.height || 0;
+    detail.x = (vw - w) / 2;
+    detail.y = 130;
+
+    GameManager.getInstance().app?.stage.addChild(detail);
+    this.detailCard = detail;
+  }
+  clearDetail() {
+    clearTimeout(this.detailTimer);
+    if (!this.detailCard) return;
+    if (this.romveDetailStep === 0) {
+      this.romveDetailStep = 1;
+      return;
+    }
+    GameManager.getInstance().app?.stage.removeChild(this.detailCard!);
+    this.detailCard?.destroy();
+    this.detailCard = undefined;
   }
 }

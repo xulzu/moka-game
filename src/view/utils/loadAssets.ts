@@ -102,5 +102,21 @@ export async function loadAssets() {
       alias: "active-bg",
       src: "/assets/active-bg.webp",
     },
+    {
+      alias: "light",
+      src: "/assets/light.webp",
+    },
+    {
+      alias: "move_light",
+      src: "/assets/move_light.webp",
+    },
+    {
+      alias: "boom",
+      src: "/assets/boom.webp",
+    },
+    {
+      alias: "arrow",
+      src: "/assets/arrow.webp",
+    },
   ]);
 }

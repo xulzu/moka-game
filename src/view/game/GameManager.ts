@@ -21,6 +21,7 @@ import { TurnIdxZone } from "./TurnIdxZone";
 import { Stack } from "./Stack";
 import { cloneDeep } from "lodash-es";
 import { ActiveZone } from "./ActiveZone";
+import { WaitDefenseZone } from "./WaitDefenseZone";
 
 export class GameManager {
   private static instance: GameManager;
@@ -104,6 +105,7 @@ export class GameManager {
   turnIdxZone: TurnIdxZone;
   healthZoneP1: Container;
   healthZoneP2: Container;
+  waitDefenseZone: WaitDefenseZone;
   static getInstance() {
     return GameManager.instance;
   }
@@ -166,12 +168,22 @@ export class GameManager {
 
     {
       //防御卡等待打出区域
+      this.waitDefenseZone = new WaitDefenseZone();
+      app.stage.addChild(this.waitDefenseZone);
     }
 
     {
       //test
       this.pushCard(0, [0, 0, 0, 2]);
       this.pushCard(1, [0, 0, 0, 0, 0, 0]);
+    }
+    {
+      //初始化事件
+      window.addEventListener("click", () => {
+        for (const card of this.handCards) {
+          card.clearDetail();
+        }
+      });
     }
   }
 
