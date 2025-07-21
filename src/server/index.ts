@@ -201,6 +201,27 @@ router.get("/api/skipDefenseCard", (ctx) => {
   room.skipDefenseCard(player.id === room.player1.id ? 0 : 1);
   ctx.body = "ok";
 });
+router.get("/api/gameInfo", (ctx) => {
+  const user = ctx.user;
+  const player = game.getPlayer(user);
+  if (!player) {
+    ctx.status = 200;
+    ctx.body = null;
+    return;
+  }
+  const play_t = player.enemy;
+
+  ctx.body = {
+    p1Info: {
+      name: player.name,
+      src: player.imgSrc,
+    },
+    p2Info: {
+      name: play_t?.name,
+      src: play_t?.imgSrc,
+    },
+  };
+});
 router.get("/api/debug", (ctx) => {
   const user = ctx.user;
   const player = game.getPlayer(user);

@@ -11,6 +11,8 @@ import { Connect } from "./Connect";
 import EventEmitter from "events";
 export class Player {
   id: string;
+  name?: string;
+  imgSrc?: string;
   room?: GameZoom;
   handCards: CardData[] = [];
   allCards: CardData[] = [];
