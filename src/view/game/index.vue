@@ -1,39 +1,39 @@
 <template>
   <div class="relative">
     <div id="pixi-container" class="w-[100vw] h-[100vh]"></div>
-    <div class="fixed z-2 right-2 top-[40%] translate-y-[-50%]">
+    <div class="fixed z-10 right-0 top-[44%] translate-y-[-50%] isolate">
       <div
-        class="h-[40px] leading-[14px] p-2 text-[12px] flex flex-col items-center justify-center w-[40px] bg-red-500 rounded-[50%]"
-        v-if="selfTurn"
         @click="endTurn"
+        class="w-[55px] h-[69px] transform-3d relative transition"
+        :class="{
+          'rotate-x-180': selfTurn,
+        }"
       >
-        <div>结束</div>
-        <div>回合</div>
+        <img
+          src="/assets/self_turn.webp"
+          width="55"
+          class="absolute left-0 top-0 rotate-x-180"
+          style="backface-visibility: hidden"
+        />
+        <img
+          src="/assets/p2_turn.webp"
+          width="55"
+          style="backface-visibility: hidden"
+          class="absolute left-0 top-0"
+        />
       </div>
       <div
-        class="h-[40px] leading-[14px] p-2 text-[12px] flex flex-col items-center justify-center w-[40px] bg-red-500 rounded-[50%]"
-        v-else
+        class="w-[55px] h-[18px] mt-1 overflow-hidden relative"
+        @click="debug"
       >
-        <div>对方</div>
-        <div>回合</div>
+        <div
+          class="rounded-[8px] w-[60px] h-[16px] pl-[4px] ml-[4px] bg-[#1f29378a] text-[12px] text-white flex items-center"
+        >
+          <img src="/assets/time.png" alt="" class="w-[12px] h-[12px] mr-1" />
+          {{ time }}s
+        </div>
       </div>
-      <div class="text-white text-center">t:{{ time }}</div>
-    </div>
-
-    <div
-      v-if="timeWait > 0"
-      class="h-[160px] w-[120px] text-[12px] bg-red-500 fixed z-10 top-[30vh] left-[50vw] -translate-x-[50%] flex flex-col items-center justify-center"
-    >
-      {{ selfWait ? "打出防御卡进行防御" : "等待对方进行防御" }}
-      <div>t:{{ timeWait }}</div>
-
-      <div
-        v-if="selfWait"
-        class="mt-4 text-blue-800 text-[14px]"
-        @click="skipDefenseCard"
-      >
-        skip
-      </div>
+      <!-- <div class="text-white text-center hover:text-red-500">t:{{ time }}</div> -->
     </div>
   </div>
 </template>
@@ -62,8 +62,7 @@ import { loadAssets } from "../utils/loadAssets";
 
 const selfTurn = ref(true);
 const time = ref(0);
-const health1 = ref(10);
-const health2 = ref(10);
+
 const selfWait = ref(false);
 const timeWait = ref(0);
 onMounted(() => {
@@ -108,23 +107,24 @@ onMounted(() => {
         const initData = data.data;
         gameManager.allCards = initData?.cards || [];
         {
+          // 初始化手牌
           gameManager.pushCard(0, initData?.self?.handcards || []);
           gameManager.pushCard(1, initData?.enemy?.handcards || []);
         }
         {
           // 初始化血量
-          gameManager.healthManager.updateHealth(
-            true,
-            initData?.self?.health || 10
-          );
-          gameManager.healthManager.updateHealth(
-            false,
-            initData?.enemy?.health || 10
-          );
+          gameManager.healthZoneP1.updateHealth(initData?.self?.health || 20);
+          gameManager.healthZoneP2.updateHealth(initData?.enemy?.health || 20);
         }
         {
           //初始化回合指示区
-          selfTurn.value = data.data.selfTurn;
+          console.log(initData.selfTurn, "selfTurn");
+          gameManager.turnIdxZone.toggle(initData.selfTurn);
+        }
+        {
+          // 初始化牌堆
+          gameManager.stackP1.updateNum(initData?.self?.stackNum || 0);
+          gameManager.stackP2.updateNum(initData?.enemy?.stackNum || 0);
         }
       } else if (data.type === "turnStart") {
         gameManager.turnIdxZone.toggle(data.self);
@@ -133,7 +133,7 @@ onMounted(() => {
       } else if (data.type === "removeCard") {
         gameManager.removeCardFromHand(Number(data.data));
       } else if (data.type === "moreHandCard") {
-        showToast("手牌爆拉~");
+        showToast("手牌爆辣~");
       } else if (data.type === "p2RemoveCard") {
         gameManager.removeCardP2(data.data);
       } else if (data.type === "homeHurt") {
@@ -141,19 +141,28 @@ onMounted(() => {
         const role = Number(data.data.role);
         // 0自己 1对方
         if (role === 0) {
-          gameManager.healthManager.updateHealth(true, lastHealth);
+          gameManager.healthZoneP1.updateHealth(lastHealth);
         } else {
-          gameManager.healthManager.updateHealth(false, lastHealth);
+          gameManager.healthZoneP2.updateHealth(lastHealth);
         }
       } else if (data.type === "waitDefenseCard") {
-        selfWait.value = data.data.self;
-        timeWait.value = data.data.time;
+        const { self, time, cardId } = data.data || {};
+        gameManager.waitDefenseCard(self, time, cardId);
       } else if (data.type === "drawCard") {
         if (data.self) {
           gameManager.pushCard(0, data.data);
         } else {
           gameManager.pushCard(1, data.data);
         }
+      } else if (data.type === "cardStackNumUpdate") {
+        const { self, num } = data.data;
+        if (self) {
+          gameManager.stackP1.updateNum(num);
+        } else {
+          gameManager.stackP2.updateNum(num);
+        }
+      } else if (data.type === "playAnimation") {
+        gameManager.playCardAnimation(data.data);
       } else if (data.type === "gameOver") {
         showToast(data.data == "win" ? "你赢了" : "你输了");
       }
@@ -177,8 +186,7 @@ function debug() {
 }
 
 function endTurn() {
-  console.log("endTurn");
-  axios.get("/api/turnEnd");
+  GameManager.getInstance().turnIdxZone.finish();
 }
 </script>
 <style lang="less" scoped></style>

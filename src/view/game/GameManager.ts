@@ -22,6 +22,7 @@ import { Stack } from "./Stack";
 import { cloneDeep } from "lodash-es";
 import { ActiveZone } from "./ActiveZone";
 import { WaitDefenseZone } from "./WaitDefenseZone";
+import { PlayAnimation } from "./PlayAnimation";
 
 export class GameManager {
   private static instance: GameManager;
@@ -103,9 +104,14 @@ export class GameManager {
     },
   ];
   turnIdxZone: TurnIdxZone;
-  healthZoneP1: Container;
-  healthZoneP2: Container;
+  healthZoneP1: Health;
+  healthZoneP2: Health;
   waitDefenseZone: WaitDefenseZone;
+  stackP1: Stack;
+  stackP2: Stack;
+  playAnimation: PlayAnimation;
+  playing = false; //打出结算中
+  playAnimating?: Promise<void>; //打出动画执行中
   static getInstance() {
     return GameManager.instance;
   }
@@ -118,21 +124,25 @@ export class GameManager {
       GameManager.instance = this;
     }
     {
+      //打出区
       this.activeZone = new ActiveZone();
       this.activeZone.x = vw100 / 2 - ActiveZone.width / 2;
       this.activeZone.y = vh100 / 2 - ActiveZone.width / 2 - 30;
       app.stage.addChild(this.activeZone);
     }
+
     {
       // 初始化牌堆
-      const stack = new Stack(app);
-
+      const stack = new Stack();
       stack.x = vw100 - 70;
       stack.y = vh100 - 240;
 
-      const stack2 = new Stack(app);
+      const stack2 = new Stack();
+
       stack2.x = 2;
       stack2.y = 88;
+      this.stackP1 = stack;
+      this.stackP2 = stack2;
       app.stage.addChild(stack, stack2);
     }
     {
@@ -147,11 +157,18 @@ export class GameManager {
       app.stage.addChild(this.healthZoneP1, this.healthZoneP2);
     }
     {
-      // 回合指示区
+      // 回合指示区;
       this.turnIdxZone = new TurnIdxZone();
-      this.turnIdxZone.x = vw100 - TurnIdxZone.width;
-      this.turnIdxZone.y = vh100 / 2 - TurnIdxZone.width - 40;
-      app.stage.addChild(this.turnIdxZone);
+    }
+    {
+      //打出动画区
+      this.playAnimation = new PlayAnimation();
+      app.stage.addChild(this.playAnimation);
+    }
+    {
+      //防御卡等待打出区域
+      this.waitDefenseZone = new WaitDefenseZone();
+      app.stage.addChild(this.waitDefenseZone);
     }
     {
       //手牌区初始化
@@ -167,15 +184,7 @@ export class GameManager {
     }
 
     {
-      //防御卡等待打出区域
-      this.waitDefenseZone = new WaitDefenseZone();
-      app.stage.addChild(this.waitDefenseZone);
-    }
-
-    {
       //test
-      this.pushCard(0, [0, 0, 0, 2]);
-      this.pushCard(1, [0, 0, 0, 0, 0, 0]);
     }
     {
       //初始化事件
@@ -195,17 +204,9 @@ export class GameManager {
     this.handCards.push(...cards);
   }
 
-  playCard(card: Card, event: FederatedPointerEvent) {
+  async playCard(card: Card, event: FederatedPointerEvent) {
     console.log(`打出卡片: ${card.cardData.name} (${card.cardData.type})`);
-    console.log(`卡片数据:`, card.cardData);
-    const zoneIndex = event.globalX <= screenWidth * 0.5 ? 0 : 1;
-    fetch(
-      "/api/play?zoneIndex=" +
-        zoneIndex +
-        "&id=" +
-        card.cardData.id +
-        "&user=230250"
-    );
+    fetch("/api/play?id=" + card.cardData.id + "&user=230250");
   }
   drawCard(n: number) {
     throw new Error("not implemented");
@@ -237,7 +238,6 @@ export class GameManager {
       return;
     }
     const index = this.handCards.indexOf(card);
-    console.log("移除卡牌", index);
     if (index !== -1) {
       this.handCards.splice(index, 1);
     }
@@ -245,11 +245,7 @@ export class GameManager {
       card.parent.removeChild(card);
       card.destroy();
     }
-    const gap = 60;
-    for (let i = index; i < this.handCards.length; i++) {
-      const moveX = this.handCards[i].x - gap;
-      this.handCards[i].x = moveX;
-    }
+    this.updateP1HandPos();
   }
 
   // 从p2手牌移除卡片
@@ -261,10 +257,7 @@ export class GameManager {
     this.p2HandZone.removeChild(card);
     card.destroy();
     this.p2HandNum--;
-    const gap = 60;
-    for (let i = idx; i < this.p2HandZone.children?.length || 0; i++) {
-      this.p2HandZone.children[i].x -= gap;
-    }
+    this.updateP2HandPos();
   }
   // 抽牌 0 自己 1 对方
   pushCard(role: 0 | 1, cardIds: number[]) {
@@ -304,26 +297,32 @@ export class GameManager {
     const ew = this.app!.screen.width - hw;
     this.p1HandZone.x = ew / 2;
     console.log(hw, "p1w");
-
+    const p1Gap = 40;
     const maxAngles = [0, 0, 15, 20, 25, 30, 30, 30];
     const maxYs = [0, 0, 10, 10, 14, 18, 50, 50];
 
     const maxAngle = maxAngles[this.handCards.length] || 30;
     const length = this.p1HandZone.children.length;
     let diff = 0;
+    let x = Card.width / 2;
     // 如果只有一张牌，则不进行计算
-    for (let i = 0; i < length && length > 1; i++) {
+    for (let i = 0; i < length; i++) {
       const child = this.p1HandZone.children[i];
-      const t = i / (length - 1);
-      const angle = (t - 0.5) * maxAngle;
-      child.angle = angle;
-      const rad = ((t - 0.5) * 90 * Math.PI) / 180;
-      const cosValue = Math.cos(rad);
-      const ny = cosValue * (maxYs[this.handCards.length] || 30);
-      if (i === 0) {
-        diff = ny;
+      child.x = x;
+      child.y = Card.height;
+      x += p1Gap;
+      if (length > 1) {
+        const t = i / (length - 1);
+        const angle = (t - 0.5) * maxAngle;
+        child.angle = angle;
+        const rad = ((t - 0.5) * 90 * Math.PI) / 180;
+        const cosValue = Math.cos(rad);
+        const ny = cosValue * (maxYs[this.handCards.length] || 30);
+        if (i === 0) {
+          diff = ny;
+        }
+        child.y -= ny - diff;
       }
-      child.y -= ny - diff;
     }
   }
   //更新对方手牌的位置，扇形排列
@@ -333,19 +332,25 @@ export class GameManager {
     const maxAngle = maxAngles[this.p2HandNum] || 30;
     const length = this.p2HandNum;
     let diff = 0;
+    let x = Card.width / 2;
     // 如果只有一张牌，则不进行计算
     for (let i = 0; i < length && length > 1; i++) {
       const child = this.p2HandZone.children[i];
-      const t = i / (length - 1);
-      const angle = (t - 0.5) * maxAngle;
-      child.angle = -angle;
-      const rad = ((t - 0.5) * 90 * Math.PI) / 180;
-      const cosValue = Math.cos(rad);
-      const ny = cosValue * (maxYs[this.p2HandNum] || 30);
-      if (i === 0) {
-        diff = ny;
+      child.x = x;
+      child.y = 0;
+      x += 40;
+      if (length > 1) {
+        const t = i / (length - 1);
+        const angle = (t - 0.5) * maxAngle;
+        child.angle = -angle;
+        const rad = ((t - 0.5) * 90 * Math.PI) / 180;
+        const cosValue = Math.cos(rad);
+        const ny = cosValue * (maxYs[this.p2HandNum] || 30);
+        if (i === 0) {
+          diff = ny;
+        }
+        child.y += ny - diff;
       }
-      child.y += ny - diff;
     }
 
     const gap = 40;
@@ -357,7 +362,28 @@ export class GameManager {
     console.log(this.p2HandZone.width, "p2w");
   }
 
-  waitDefenseCard(self: boolean, time: number) {}
+  waitDefenseCard(self: boolean, time: number, cardId: number) {
+    const healthZone = self ? this.healthZoneP1 : this.healthZoneP2;
+    if (time) {
+      healthZone.showMoveLight();
+    } else {
+      healthZone.hideMoveLight();
+    }
+    const card = this.allCards.find((item) => item.id === cardId);
+    if (time === 0 || !card) {
+      this.waitDefenseZone.visible = false;
+      return;
+    }
+    this.waitDefenseZone.updateTime(self, time, card as AttackCardData);
+  }
+  // 播放打出动画
+  playCardAnimation(id: number) {
+    const card = this.allCards.find((item) => item.id === id);
+    if (!card) {
+      return;
+    }
+    this.playAnimation.play(card);
+  }
   // 获取游戏状态（用于UI更新）
   getGameState() {
     return {

@@ -36,6 +36,7 @@ export class Player {
 
   //抽牌,如果牌库没牌，则判负
   drawCard(n: number) {
+    const diff = n - this.allCards.length;
     if (this.allCards.length) {
       const nextCards = this.allCards.splice(0, n);
       this.handCards.push(...(nextCards || []));
@@ -44,10 +45,20 @@ export class Player {
         new Array(nextCards.length).fill(-1),
         false
       );
-    } else {
-      this.health = 0;
+    }
+
+    if (diff > 0) {
+      this.health -= diff;
+      this.connect?.homeHurt(0, this.health);
+      this.enemy?.connect?.homeHurt(1, this.enemy.health);
       this.tryGameOver();
     }
+
+    this.connect?.cardStackNumUpdate(true, this.allCards.length);
+    this.enemy?.connect?.cardStackNumUpdate(
+      false,
+      this.enemy?.allCards.length || 0
+    );
   }
   turnStart() {
     this.attackNumOneTurn = 0;
@@ -117,6 +128,7 @@ export class Player {
     this.playLimitOneTurn--;
     this.prevCard = card; // 记录上一张打出的牌
     this.tryGameOver(); // 尝试看能否结束游戏
+    return 1;
   }
   turnEnd() {
     if (this.handCards.length > 4) {
@@ -136,8 +148,8 @@ export class Player {
     if (this.room?.waitTimer) {
       clearInterval(this.room.waitTimer);
       this.room.waitTimer = undefined;
-      this.connect?.waitDefenseCard(true, 0);
-      this.enemy?.connect?.waitDefenseCard(false, 0);
+      this.connect?.waitDefenseCard(true, 0, -1);
+      this.enemy?.connect?.waitDefenseCard(false, 0, -1);
     }
     this.enemy?.flushAttack(card.defense);
   }
@@ -273,23 +285,28 @@ export class GameZoom extends EventEmitter {
       player.connect?.optError("目前不是你的回合~");
       return;
     }
-    player.playCard(zoneIndex, id);
-    if (player.danger !== -1) {
-      this.waitDefenseCard();
+    const ok = player.playCard(zoneIndex, id);
+    if (ok && player.danger !== -1) {
+      console.log("等待防御");
+      this.waitDefenseCard(id);
+    }
+    if (ok && player.danger === -1) {
+      player.connect?.playAnimation(id);
+      player_t.connect?.playAnimation(id);
     }
   }
 
   //打出攻击卡后等待对方打出防御卡
-  private waitDefenseCard() {
+  private waitDefenseCard(id: number) {
     const player = this.currentPlayer === 0 ? this.player1 : this.player2;
     const player_t = this.currentPlayer === 0 ? this.player2 : this.player1;
-    player.connect?.waitDefenseCard(false, 5);
-    player_t.connect?.waitDefenseCard(true, 5);
+    player.connect?.waitDefenseCard(false, 5, id);
+    player_t.connect?.waitDefenseCard(true, 5, id);
     let timeIdx = 5;
     this.waitTimer = setInterval(() => {
       timeIdx--;
-      player.connect?.waitDefenseCard(false, timeIdx);
-      player_t.connect?.waitDefenseCard(true, timeIdx);
+      player.connect?.waitDefenseCard(false, timeIdx, id);
+      player_t.connect?.waitDefenseCard(true, timeIdx, id);
       if (timeIdx <= 0) {
         clearInterval(this.waitTimer);
         this.waitTimer = undefined;
@@ -308,8 +325,8 @@ export class GameZoom extends EventEmitter {
       const player = rule === 0 ? this.player1 : this.player2;
       const player_t = rule === 0 ? this.player2 : this.player1;
       player_t.flushAttack();
-      player.connect?.waitDefenseCard(true, 0);
-      player_t.connect?.waitDefenseCard(false, 0);
+      player.connect?.waitDefenseCard(true, 0, -1);
+      player_t.connect?.waitDefenseCard(false, 0, -1);
     }
   }
   //玩家p1 or p2 回合结束
@@ -341,7 +358,7 @@ export class GameZoom extends EventEmitter {
     const player_t = this.currentPlayer === 0 ? this.player2 : this.player1;
     console.log(this.currentPlayer, "nextTurn");
     player.turnStart();
-    const timeout = 20;
+    const timeout = 30;
     let timeIdx = 0;
     this.timeoutTimer = setInterval(() => {
       if (player.danger !== -1) {

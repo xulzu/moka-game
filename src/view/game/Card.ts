@@ -143,15 +143,14 @@ export class Card extends Container {
     this.txtContainer?.addChild(txt);
   }
   dragStart(event: FederatedPointerEvent) {
+    if (!this.draggle) return;
     this.clearDetail();
     this.detailTimer = setTimeout(() => {
       this.showDetail();
     }, 500);
 
-    if (!this.draggle) return;
     this.alpha = 0.5;
     this.isDragging = true;
-    console.log(this.id);
     const newCard = new Card(this.x, this.y, this.cardData);
     this.parent.addChild(newCard);
     this.moveCard = newCard;
@@ -212,6 +211,8 @@ export class Card extends Container {
   showDetail() {
     const detail = new Card(0, 0, this.cardData);
     detail.pivot.set(0, 0);
+    detail.draggle = false;
+
     const w = 190;
     detail.setSize(w, w * (Card.height / Card.width));
     const vw = GameManager.getInstance().app?.screen.width || 0;

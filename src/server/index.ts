@@ -139,6 +139,7 @@ router.get("/sse/connect", async (ctx) => {
     cards: cards as CardData[],
     self: {
       health: player.health,
+      stackNum: player.allCards.length,
       handcards: player.handCards?.map((item) => item.id) || [],
       defenseCards: player.defenseZones?.map((item) => item?.id || null) || [],
     },
@@ -146,6 +147,7 @@ router.get("/sse/connect", async (ctx) => {
       id: player.enemy?.id || "",
       machine: player.enemy?.machine || false,
       health: player.enemy?.health || 0,
+      stackNum: player.enemy?.allCards.length || 0,
       handcards: player.enemy?.handCards?.map((item) => -1) || [],
       defenseCards:
         player.enemy?.defenseZones?.map((item) => item?.id || null) || [],

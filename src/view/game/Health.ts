@@ -6,7 +6,7 @@ import mitt from "mitt";
 export class Health extends Container {
   static width = 70;
   static height = 70;
-  health: number = 20;
+  health: number = 0;
   defenseContainer: Container;
   txtContainer: Container;
   gaspAnimal?: any;
@@ -124,7 +124,6 @@ export class Health extends Container {
     this.addChild(this.dangerContainer);
 
     this.updateHealth(15);
-    this.showMoveLight();
   }
   updateHealth(health: number) {
     const oldHealth = this.health;
@@ -148,7 +147,7 @@ export class Health extends Container {
 
     this.txtContainer.addChild(txt);
     const danger = health - oldHealth;
-    if (danger) {
+    if (danger < 0) {
       this.dangerContainer.removeChildren();
       const dangerTxt = new Text({
         text: danger,

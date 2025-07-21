@@ -15,6 +15,7 @@ export class Connect {
     self: {
       health: number;
       handcards: number[];
+      stackNum: number;
       defenseCards: (number | null)[];
     };
     enemy: {
@@ -22,6 +23,7 @@ export class Connect {
       machine: boolean;
       health: number;
       handcards: number[];
+      stackNum: number;
       defenseCards: (number | null)[];
     };
     selfTurn: boolean;
@@ -96,6 +98,14 @@ export class Connect {
       })
     );
   }
+  playAnimation(id: number) {
+    this.res.send(
+      JSON.stringify({
+        type: "playAnimation",
+        data: id,
+      })
+    );
+  }
   removeCard(id: number) {
     this.res.send(
       JSON.stringify({
@@ -137,11 +147,19 @@ export class Connect {
       })
     );
   }
-  waitDefenseCard(self: boolean, time: number) {
+  waitDefenseCard(self: boolean, time: number, cardId: number) {
     this.res.send(
       JSON.stringify({
         type: "waitDefenseCard",
-        data: { self, time },
+        data: { self, time, cardId },
+      })
+    );
+  }
+  cardStackNumUpdate(self: boolean, num: number) {
+    this.res.send(
+      JSON.stringify({
+        type: "cardStackNumUpdate",
+        data: { self, num },
       })
     );
   }

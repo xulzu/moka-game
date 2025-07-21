@@ -5,6 +5,7 @@
     "name": "SQL注入",
     "description": "利用未过滤输入攻击数据库",
     "attack": 4,
+    "bg": "sql_inject",
     "tag1": "DIRECT_ONLY",
     "tag2": "WEB_ATTACK",
     "tag3": null,
@@ -16,6 +17,7 @@
     "id": 1,
     "type": "attack",
     "name": "钓鱼邮件",
+    "bg": "dyyj",
     "description": "诱导泄露信息",
     "attack": 5,
     "tag1": "SPLASH",
@@ -29,6 +31,7 @@
     "id": 2,
     "type": "defense",
     "name": "防火墙",
+    "bg": "px1",
     "description": "保护网络免受攻击",
     "defense": 2,
     "health": 2,
@@ -37,6 +40,7 @@
   },
   {
     "id": 11,
+    "bg": "sql_inject",
     "type": "attack",
     "name": "钓鱼邮件2",
     "description": "诱导泄露信息3",
@@ -51,6 +55,7 @@
   {
     "id": 112,
     "type": "attack",
+    "bg": "sql_inject",
     "name": "钓鱼邮件233",
     "description": "诱导泄露信息333",
     "attack": 5,
@@ -68,26 +73,13 @@
     "description": "保护网络免受攻击",
     "defense": 2,
     "health": 3,
+    "bg": "px1",
     "buffTagert": "SOCIAL_ENGINEERING",
     "buffEffect": [
       {
         "name": "d_1",
         "args": {
           "n": 1
-        }
-      }
-    ]
-  },
-  {
-    "id": 4,
-    "type": "special",
-    "name": "漏洞修复补丁",
-    "description": "恢复一个防御卡或主机2点生命值",
-    "effect": [
-      {
-        "name": "s_1",
-        "args": {
-          "n": 2
         }
       }
     ]

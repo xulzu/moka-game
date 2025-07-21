@@ -1,7 +1,8 @@
 import { Application, Assets, Container, Sprite, Text } from "pixi.js";
 
 export class Stack extends Container {
-  constructor(app: Application) {
+  txtContainer: Container;
+  constructor() {
     super();
 
     const stackSprite = new Sprite(Assets.get("stack"));
@@ -10,15 +11,9 @@ export class Stack extends Container {
     stackSprite.height = size;
 
     const txtContainer = new Container();
+    this.txtContainer = txtContainer;
     txtContainer.x = 28;
     txtContainer.y = 38;
-    const txtSprite = new Text({
-      text: "17",
-      style: {
-        fill: "#a78bfa",
-        fontSize: 22,
-      },
-    });
 
     const txtSpritex = new Text({
       text: "x",
@@ -29,8 +24,18 @@ export class Stack extends Container {
     });
     txtSpritex.x = 20;
     txtSpritex.y = 42;
-    txtContainer.addChild(txtSprite);
 
     this.addChild(stackSprite, txtContainer, txtSpritex);
+  }
+  updateNum(num: number) {
+    this.txtContainer.removeChildren();
+    const txt = new Text({
+      text: num,
+      style: {
+        fill: "#a78bfa",
+        fontSize: 22,
+      },
+    });
+    this.txtContainer.addChild(txt);
   }
 }
