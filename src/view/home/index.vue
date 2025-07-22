@@ -1,20 +1,50 @@
 <template>
-  <div class="h-[100vh] w-full flex justify-center items-center flex-col">
-    <Field v-model="user" placeholder="请输入用户名" class="mb-3" />
-    <Button type="primary" @click="start">开始</Button>
+  <div
+    class="h-[100vh] w-[100vw] flex justify-center items-center relative flex-col bg"
+  >
+    <img
+      :src="btn0"
+      alt=""
+      @click="start"
+      srcset=""
+      width="120"
+      class="shdaow_ absolute top-[40vh] left-1/2 -translate-x-1/2"
+    />
+    <img
+      :src="btn1"
+      alt=""
+      srcset=""
+      width="90"
+      class="shdaow_ absolute top-[calc(40vh+120px)] left-[16vw]"
+    />
+    <img
+      :src="btn2"
+      alt=""
+      srcset=""
+      width="90"
+      class="shdaow_ absolute top-[calc(40vh+120px)] right-[16vw]"
+    />
   </div>
 </template>
 <script lang="ts" setup>
 import axios from "axios";
 import { Button, Field, showToast } from "vant";
 import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { loadAssets } from "../utils/loadAssets";
+import btn0 from "@/assets/btn0.webp";
+import btn1 from "@/assets/btn1.webp";
+import btn2 from "@/assets/btn2.webp";
+
 const router = useRouter();
-const user = ref(Date.now().toString());
+const route = useRoute();
+const user = ref(route.query.id as string);
 const cache = localStorage.getItem("user");
 if (cache) {
   user.value = cache;
+}
+if (!user.value) {
+  user.value = (Math.random() * 100).toFixed(2);
 }
 async function start() {
   try {
@@ -24,9 +54,13 @@ async function start() {
     showToast(error + "");
   }
 }
-init();
-async function init() {
-  await loadAssets();
-}
 </script>
-<style lang="less" scoped></style>
+<style lang="less" scoped>
+.bg {
+  background-image: url("@/assets/home.png");
+  background-size: 100% 100%;
+}
+.shdaow_ {
+  filter: drop-shadow(0px 0px 20px #f9fdfd);
+}
+</style>

@@ -5,6 +5,7 @@ import Koa from "koa";
 type PendingResolve = (value: string) => void;
 import cards from "./cards.json";
 import type { CardData } from "../baseType/base";
+import { Computer } from "./Computer";
 
 class Game {
   queue: { user: string; resolve: PendingResolve }[] = [];
@@ -19,47 +20,31 @@ class Game {
     const promise = new Promise<string>((resolve, reject) => {
       resolve_ = resolve;
     });
-    const dev = false;
-    if (dev) {
-      const player1 = new Player(user);
-      const player2 = new Player("test");
-      player2.machine = true;
-
-      const game = new GameZoom(player1, player2);
-      game.on("gameOver", () => {
-        // 游戏结束，清理内存
-        delete this.allZoom[player1.id];
-        delete this.allZoom[player2.id];
-      });
-
-      player1.room = game;
-      player2.room = game;
-      this.allZoom[player1.id] = player1;
-      this.allZoom[player2.id] = player2;
-      resolve_!(game.id);
-    } else if (this.queue.length) {
+    let timer: any = void 0;
+    if (this.queue.length) {
       const { user: p2, resolve: resolve_2 } = this.queue.shift()!;
-      let player1 = new Player(user);
-      let player2 = new Player(p2);
-      if (Math.random() < 0.5) {
-        // 随机决定先手
-        [player1, player2] = [player2, player1];
-      }
-      const game = new GameZoom(player1, player2);
-      game.on("gameOver", () => {
-        // 游戏结束，清理内存
-        delete this.allZoom[player1.id];
-        delete this.allZoom[player2.id];
-      });
-      player1.room = game;
-      player2.room = game;
-      this.allZoom[player1.id] = player1;
-      this.allZoom[player2.id] = player2;
+      const game = this.createGame(user, p2);
       resolve_2?.(game.id);
       resolve_!(game.id);
     } else {
       this.queue.push({ user, resolve: resolve_! });
+      timer = setTimeout(() => {
+        const idx = this.queue.findIndex((item) => item.user === user);
+        if (idx !== -1) {
+          this.queue.splice(idx, 1);
+          const computerClient = new Computer();
+          const game = this.createGame(computerClient.id, user);
+          const computer = this.getPlayer(computerClient.id);
+          computer.connect = new Connect({
+            send: (data) => {
+              computerClient.action(data);
+            },
+            close: () => {},
+          });
+        }
+      }, 20 * 1000);
       onQuit(() => {
+        clearTimeout(timer);
         // 如果用户取消排队，则从队列中移除
         const idx = this.queue.findIndex((item) => item.user === user);
         if (idx !== -1) {
@@ -67,12 +52,30 @@ class Game {
         }
       });
     }
-    console.log(this.queue.length, "---");
     const roomId = await promise;
     return roomId;
   }
   getPlayer(id: string) {
     return this.allZoom[id];
+  }
+  createGame(user1: string, user2: string) {
+    let player1 = new Player(user1);
+    let player2 = new Player(user2);
+    if (Math.random() < 0.5) {
+      // 随机决定先手
+      [player1, player2] = [player2, player1];
+    }
+    const game = new GameZoom(player1, player2);
+    game.on("gameOver", () => {
+      // 游戏结束，清理内存
+      delete this.allZoom[player1.id];
+      delete this.allZoom[player2.id];
+    });
+    player1.room = game;
+    player2.room = game;
+    this.allZoom[player1.id] = player1;
+    this.allZoom[player2.id] = player2;
+    return game;
   }
 }
 
@@ -87,17 +90,14 @@ app.use((ctx, next) => {
 router.get("/api/pending", async (ctx) => {
   const user = ctx.query.user as string;
   ctx.cookies.set("user", user);
-  console.log(game.queue.length, "++++");
   const roomId = await game.pending(user, (cb) => {
     ctx.res.on("close", cb);
   });
-  console.log(roomId);
   ctx.body = roomId;
 });
 
 router.get("/sse/connect", async (ctx) => {
   const user = ctx.user;
-  console.log(user, "user sse");
   const player = game.getPlayer(user);
 
   ctx.set({
@@ -155,7 +155,6 @@ router.get("/sse/connect", async (ctx) => {
     selfTurn: currentPlayer.id === player.id,
   });
   ctx.res.on("close", () => {
-    console.log("close", "close");
     player.connect = undefined;
   });
   await promise;
@@ -169,10 +168,9 @@ router.get("/api/play", (ctx) => {
     ctx.body = "对局不存在";
     return;
   }
-  const zoneIndex = Number(ctx.query.zoneIndex) as 0 | 1;
   const id = Number(ctx.query.id);
   const room = player.room!;
-  room.playCard(player.id === room.player1.id ? 0 : 1, zoneIndex, id);
+  room.playCard(player.id === room.player1.id ? 0 : 1, id);
   ctx.body = "ok";
 });
 

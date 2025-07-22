@@ -6,6 +6,10 @@
     "module": "ESNext",
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "skipLibCheck": true,
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"]
+    },
 
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -29,5 +33,6 @@
     "src/**/*.vue",
     "src/view/utils/loadAssets.ts"
   ],
+
   "files": ["node_modules/gsap/types/index.d.ts"]
 }

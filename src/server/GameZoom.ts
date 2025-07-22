@@ -69,7 +69,7 @@ export class Player {
     this.denfenseTemp = 0;
     //新回合开始，结算上回合遗留的效果
     for (const e of this.nextEffect) {
-      this.calcSpecialEffect(0, e);
+      this.calcSpecialEffect(e);
     }
     this.nextEffect = [];
     this.drawCard(2);
@@ -77,7 +77,7 @@ export class Player {
     this.enemy?.connect?.turnStart(false);
   }
   //打出牌,要负责数据校验
-  playCard(zoneIndex: 0 | 1, id: number) {
+  playCard(id: number) {
     const idx = this.handCards.findIndex((c) => c.id === id);
     const card = this.handCards[idx];
     if (!card) {
@@ -109,20 +109,6 @@ export class Player {
       this.handleDefenseCard(card);
     } else if (card.type === "special") {
       const effect = card.effect;
-      if (effect.some((item) => item.name === "s_1")) {
-        const idx_2 = (zoneIndex ^ 1) as 0 | 1;
-        if (!this.defenseZones[zoneIndex] && !this.defenseZones[idx_2]) {
-          this.connect?.optError("需要选定防御牌生效");
-          return;
-        }
-        if (this.defenseZones[zoneIndex]) {
-          this.handleSpecialCard(zoneIndex, card);
-        } else if (this.defenseZones[idx_2]) {
-          this.handleSpecialCard(idx_2, card);
-        }
-      } else {
-        this.handleSpecialCard(zoneIndex, card);
-      }
     }
     this.handCards.splice(this.handCards.indexOf(card), 1);
     this.connect?.removeCard(id);
@@ -193,34 +179,10 @@ export class Player {
     }
   }
   //策略卡结算
-  private handleSpecialCard(zoneIndex: 0 | 1, card: SpecialCardData) {
-    for (const e of card.effect) {
-      if (e.name === "s_1") {
-        const index2 = (zoneIndex ^ 1) as 0 | 1;
-        if (this.defenseZones[zoneIndex]) {
-          this.calcSpecialEffect(zoneIndex, e);
-        } else if (this.defenseZones[index2]) {
-          this.calcSpecialEffect(index2, e);
-        }
-      } else if (["s_2", "s_3", "s_4"].includes(e.name)) {
-        // 当前回合就能结算的效果
-        this.calcSpecialEffect(zoneIndex, e);
-      } else {
-        //下回合才能结算的效果
-        const player = e.args.p as number;
-        if (player === 0) {
-          this.nextEffect.push(e);
-        } else {
-          this.enemy?.nextEffect.push(e);
-        }
-      }
-    }
-  }
-  private calcSpecialEffect(zoneIndex: 0 | 1, effect: Effect) {
+  private handleSpecialCard(card: SpecialCardData) {}
+  private calcSpecialEffect(effect: Effect) {
     if (effect.name === "s_1") {
-      if (this.defenseZones[zoneIndex]) {
-        this.defenseZones[zoneIndex].health += Number(effect.args.n) || 0;
-      }
+      //
     } else if (effect.name === "s_2") {
       this.drawCard(Number(effect.args.n) || 0);
     } else if (effect.name === "s_3") {
@@ -272,11 +234,11 @@ export class GameZoom extends EventEmitter {
     this.player1.drawCard(2);
     this.player2.drawCard(2);
     if (this.player2.machine) {
-      this.player2.playCard(0, 2);
+      this.player2.playCard(2);
     }
     this.nextTurn();
   }
-  playCard(rule: 0 | 1, zoneIndex: 0 | 1, id: number) {
+  playCard(rule: 0 | 1, id: number) {
     const player = rule === 0 ? this.player1 : this.player2;
     const player_t = player.enemy!;
     const card = player.handCards.find((c) => c.id === id);
@@ -287,7 +249,7 @@ export class GameZoom extends EventEmitter {
       player.connect?.optError("目前不是你的回合~");
       return;
     }
-    const ok = player.playCard(zoneIndex, id);
+    const ok = player.playCard(id);
     if (ok && player.danger !== -1) {
       console.log("等待防御");
       this.waitDefenseCard(id);
