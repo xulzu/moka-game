@@ -176,6 +176,7 @@ export class Player {
       this.connect?.homeHurt(1, this.enemy.health);
       this.enemy.connect?.homeHurt(0, this.enemy.health);
       this.danger = -1; // 结算后重置伤害值
+      this.connect?.flushAttack();
     }
   }
   //策略卡结算
@@ -205,10 +206,14 @@ export class Player {
       this.connect?.gameOver("lose");
       this.enemy?.connect?.gameOver("win");
       this.room?.gameOver();
+      this.connect?.close();
+      this.enemy?.connect?.close();
     } else if ((this.enemy?.health || 0) <= 0) {
       this.connect?.gameOver("win");
       this.enemy?.connect?.gameOver("lose");
       this.room?.gameOver();
+      this.connect?.close();
+      this.enemy?.connect?.close();
     }
   }
 }
@@ -255,6 +260,7 @@ export class GameZoom extends EventEmitter {
       this.waitDefenseCard(id);
     }
     if (ok && player.danger === -1) {
+      console.log("播放打出效果");
       player.connect?.playAnimation(id);
       player_t.connect?.playAnimation(id);
     }

@@ -32,17 +32,12 @@ class Game {
         const idx = this.queue.findIndex((item) => item.user === user);
         if (idx !== -1) {
           this.queue.splice(idx, 1);
-          const computerClient = new Computer();
-          const game = this.createGame(computerClient.id, user);
-          const computer = this.getPlayer(computerClient.id);
-          computer.connect = new Connect({
-            send: (data) => {
-              computerClient.action(data);
-            },
-            close: () => {},
-          });
+          const pd_id = Computer.randomId();
+          const game = this.createGame(pd_id, user);
+          new Computer(pd_id, game);
+          resolve_(game.id);
         }
-      }, 20 * 1000);
+      }, 5 * 1000);
       onQuit(() => {
         clearTimeout(timer);
         // 如果用户取消排队，则从队列中移除
@@ -53,6 +48,7 @@ class Game {
       });
     }
     const roomId = await promise;
+    clearTimeout(timer);
     return roomId;
   }
   getPlayer(id: string) {
@@ -112,14 +108,7 @@ router.get("/sse/connect", async (ctx) => {
     ctx.res.end();
     return;
   }
-  const oldConnect = player.connect;
-  if (oldConnect) {
-    try {
-      oldConnect?.close();
-    } catch (error) {
-      //
-    }
-  }
+
   let closeConnect: any;
   const promise = new Promise((resolve, reject) => {
     closeConnect = resolve;
@@ -128,7 +117,6 @@ router.get("/sse/connect", async (ctx) => {
     send: (data) => ctx.res.write(`data: ${data}\n\n`),
     close: () => {
       console.log("游戏结束");
-      ctx.res.end();
       closeConnect();
     },
   });

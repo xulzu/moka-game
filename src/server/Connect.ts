@@ -54,6 +54,7 @@ export class Connect {
       })
     );
   }
+
   //错误
   optError(msg: string) {
     this.res.send(
@@ -98,6 +99,7 @@ export class Connect {
       })
     );
   }
+  //播放打出效果
   playAnimation(id: number) {
     this.res.send(
       JSON.stringify({
@@ -129,7 +131,6 @@ export class Connect {
         data: type,
       })
     );
-    this.close();
   }
   turnEndTimeout(time: number) {
     this.res.send(
@@ -160,6 +161,14 @@ export class Connect {
       JSON.stringify({
         type: "cardStackNumUpdate",
         data: { self, num },
+      })
+    );
+  }
+  //攻击延时结算完成
+  flushAttack() {
+    this.res.send(
+      JSON.stringify({
+        type: "flushAttack",
       })
     );
   }

@@ -380,6 +380,7 @@ export class GameManager {
   playCardAnimation(id: number) {
     const card = this.allCards.find((item) => item.id === id);
     if (!card) {
+      console.log("播放效果，但没卡牌");
       return;
     }
     this.playAnimation.play(card);
