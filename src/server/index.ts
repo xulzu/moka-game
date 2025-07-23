@@ -110,7 +110,6 @@ router.get("/sse/pending", async (ctx) => {
   ctx.flushHeaders();
   ctx.res.write("retry: 0\n\n");
   ctx.req.on("close", () => {
-    console.log("结束排队");
     game.cancel(user);
     ctx.res.end();
   });
