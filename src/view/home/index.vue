@@ -38,17 +38,19 @@ import btn2 from "@/assets/btn2.webp";
 
 const router = useRouter();
 const route = useRoute();
-const user = ref(route.query.id as string);
+const user = ref("");
 const cache = localStorage.getItem("user");
 if (cache) {
   user.value = cache;
 }
 if (!user.value) {
   user.value = (Math.random() * 100).toFixed(2);
+} else if (route.query.id as string) {
+  user.value = route.query.id as string;
 }
+localStorage.setItem("user", user.value);
 async function start() {
   try {
-    localStorage.setItem("user", user.value);
     router.push(`/pend`);
   } catch (error) {
     showToast(error + "");

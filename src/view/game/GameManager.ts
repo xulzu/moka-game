@@ -159,6 +159,9 @@ export class GameManager {
     {
       // 回合指示区;
       this.turnIdxZone = new TurnIdxZone();
+      this.turnIdxZone.y = vh100 / 2 - 60;
+      this.turnIdxZone.x = (vw100 - this.turnIdxZone.width) / 2;
+      app.stage.addChild(this.turnIdxZone);
     }
     {
       //打出动画区
@@ -311,6 +314,7 @@ export class GameManager {
       child.x = x;
       child.y = Card.height;
       x += p1Gap;
+      child.angle = 0;
       if (length > 1) {
         const t = i / (length - 1);
         const angle = (t - 0.5) * maxAngle;
@@ -334,11 +338,12 @@ export class GameManager {
     let diff = 0;
     let x = Card.width / 2;
     // 如果只有一张牌，则不进行计算
-    for (let i = 0; i < length && length > 1; i++) {
+    for (let i = 0; i < length; i++) {
       const child = this.p2HandZone.children[i];
       child.x = x;
       child.y = 0;
       x += 40;
+      child.angle = 0;
       if (length > 1) {
         const t = i / (length - 1);
         const angle = (t - 0.5) * maxAngle;

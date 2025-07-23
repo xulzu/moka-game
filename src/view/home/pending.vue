@@ -55,7 +55,7 @@
 import axios from "axios";
 import { loadAssets } from "../utils/loadAssets";
 import { useRouter } from "vue-router";
-import { ref } from "vue";
+import { onBeforeUnmount, ref } from "vue";
 import img from "/assets/user_ico.webp";
 let controller: AbortController | null = null;
 const router = useRouter();
@@ -73,7 +73,8 @@ init();
 async function init() {
   try {
     page.value = 0;
-    const { data } = await axios.get("/api/gameInfo");
+    const user = localStorage.getItem("user");
+    const { data } = await axios.get(`/api/gameInfo?user=${user}`);
     if (data) {
       p1Info.value = data.p1Info || {};
       p2Info.value = data.p2Info || {};
@@ -89,14 +90,22 @@ async function start() {
     time.value += 1;
   }, 1000);
   controller = new AbortController();
-  const user = localStorage.getItem("user");
-  await axios.get(`/api/pending?user=${user}`, {
-    signal: controller.signal,
+
+  const tag = await new Promise((res) => {
+    const sse = new EventSource(`/sse/pending`);
+    sse.onmessage = (event) => {
+      const data = event.data;
+      sse.close();
+      res(data);
+    };
   });
-  toGame();
+  console.log("tag", tag);
+  if (Number(tag) === 1) {
+    toGame();
+  }
 }
 function cancel() {
-  controller?.abort();
+  axios.get("/api/cancel");
   router.push(`/`);
 }
 

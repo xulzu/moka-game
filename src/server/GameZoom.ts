@@ -22,6 +22,7 @@ export class Player {
   prevCard?: CardData; // 上一张打出的牌 , 用于结算效果
   connect?: Connect;
   machine: boolean = false; //是否是AI
+  timeoutNum = 0; //烧绳子多少次
 
   attackNumOneTurn: number = 0; //本回合打出的攻击卡数量
   playLimitOneTurn: number = Infinity; //本回合打出的牌数量限制
@@ -63,6 +64,8 @@ export class Player {
     );
   }
   turnStart() {
+    this.connect?.turnStart(true);
+    this.enemy?.connect?.turnStart(false);
     this.attackNumOneTurn = 0;
     this.playLimitOneTurn = Infinity;
     this.attckTemp = 0;
@@ -73,8 +76,7 @@ export class Player {
     }
     this.nextEffect = [];
     this.drawCard(2);
-    this.connect?.turnStart(true);
-    this.enemy?.connect?.turnStart(false);
+    this.connect?.drawEnd();
   }
   //打出牌,要负责数据校验
   playCard(id: number) {
@@ -227,6 +229,8 @@ export class GameZoom extends EventEmitter {
   timeoutTimer?: any;
   waitTimer?: any;
   turnIdx: number = 1;
+  started = false;
+  gameFinish = false;
   constructor(player1: Player, player2: Player) {
     super();
     this.player1 = player1;
@@ -234,14 +238,19 @@ export class GameZoom extends EventEmitter {
     this.player1.enemy = player2;
     this.player2.enemy = player1;
     this.id = createRandomId();
-
+    console.log(
+      "先手玩家",
+      this.currentPlayer,
+      `p1:${this.player1.id} p2:${(this, player2.id)}`
+    );
+  }
+  gameStart() {
+    if (this.started) return;
     // 游戏开始，初始化游戏状态,并开始第一回合倒计时
     this.player1.drawCard(2);
     this.player2.drawCard(2);
-    if (this.player2.machine) {
-      this.player2.playCard(2);
-    }
     this.nextTurn();
+    this.started = true;
   }
   playCard(rule: 0 | 1, id: number) {
     const player = rule === 0 ? this.player1 : this.player2;
@@ -322,13 +331,14 @@ export class GameZoom extends EventEmitter {
     this.nextTurn();
   }
   private nextTurn() {
+    if (this.gameFinish) return;
     this.turnIdx++;
     // 开始新回合，并设置超时计时
     const player = this.currentPlayer === 0 ? this.player1 : this.player2;
     const player_t = this.currentPlayer === 0 ? this.player2 : this.player1;
-    console.log(this.currentPlayer, "nextTurn");
+    console.log(this.currentPlayer, player.id, "回合开始");
     player.turnStart();
-    const timeout = 30;
+    const timeout = 20;
     let timeIdx = 0;
     this.timeoutTimer = setInterval(() => {
       if (player.danger !== -1) {
@@ -340,20 +350,20 @@ export class GameZoom extends EventEmitter {
       player_t.connect?.turnEndTimeout(timeout - timeIdx);
       if (timeIdx >= timeout) {
         clearInterval(this.timeoutTimer);
-        // player_t?.connect?.gameOver("win");
-        // player?.connect?.gameOver("lose");
-        // this.gameOver();
-      }
-    }, 1000);
-
-    setTimeout(() => {
-      if (player.machine) {
-        console.log(this.currentPlayer, "machine");
         this.turnEnd(this.currentPlayer);
+        player.timeoutNum++;
+        if (player.timeoutNum === 2) {
+          player.connect?.optError("下次再自动结束回合则会输掉游戏哦-");
+        }
+        if (player.timeoutNum === 3) {
+          player.health = 0;
+          player.tryGameOver();
+        }
       }
     }, 1000);
   }
   gameOver() {
+    this.gameFinish = true;
     this.emit("gameOver");
   }
 }

@@ -35,6 +35,25 @@
       </div>
       <!-- <div class="text-white text-center hover:text-red-500">t:{{ time }}</div> -->
     </div>
+
+    <div
+      v-if="win"
+      @click="$router.push('/')"
+      class="fixed left-0 top-0 h-[100vh] w-[100vw] z-10 bg-[#060606c9]"
+    >
+      <img
+        v-if="win === 'win'"
+        src="/assets/win.webp"
+        class="absolute w-[250px] left-1/2 -translate-x-1/2 top-[30vh] element"
+        alt=""
+      />
+      <img
+        v-else
+        src="/assets/lose.webp"
+        class="absolute w-[250px] left-1/2 -translate-x-1/2 top-[30vh] element"
+        alt=""
+      />
+    </div>
   </div>
 </template>
 <script lang="ts" setup>
@@ -65,6 +84,7 @@ const time = ref(0);
 
 const selfWait = ref(false);
 const timeWait = ref(0);
+const win = ref("");
 onMounted(() => {
   gsap.registerPlugin(PixiPlugin);
   PixiPlugin.registerPIXI(PIXI);
@@ -140,11 +160,13 @@ onMounted(() => {
         const lastHealth = Number(data.data.lastHealth);
         const role = Number(data.data.role);
         // 0自己 1对方
-        if (role === 0) {
-          gameManager.healthZoneP1.updateHealth(lastHealth);
-        } else {
-          gameManager.healthZoneP2.updateHealth(lastHealth);
-        }
+        setTimeout(() => {
+          if (role === 0) {
+            gameManager.healthZoneP1.updateHealth(lastHealth);
+          } else {
+            gameManager.healthZoneP2.updateHealth(lastHealth);
+          }
+        }, 500);
       } else if (data.type === "waitDefenseCard") {
         const { self, time, cardId } = data.data || {};
         gameManager.waitDefenseCard(self, time, cardId);
@@ -164,16 +186,13 @@ onMounted(() => {
       } else if (data.type === "playAnimation") {
         gameManager.playCardAnimation(data.data);
       } else if (data.type === "gameOver") {
-        showToast(data.data == "win" ? "你赢了" : "你输了");
+        win.value = data.data;
+        sse.close();
       }
     };
     sse.onerror = (event) => {
       console.log(event);
     };
-    sse.addEventListener("error", (event: any) => {
-      sse.close();
-      showToast("连接失败，刷新试试~");
-    });
   })();
 });
 
@@ -189,4 +208,19 @@ function endTurn() {
   GameManager.getInstance().turnIdxZone.finish();
 }
 </script>
-<style lang="less" scoped></style>
+<style lang="less" scoped>
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.element {
+  animation: slideDown 0.7s ease forwards;
+}
+</style>

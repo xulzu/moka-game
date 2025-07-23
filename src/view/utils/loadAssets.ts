@@ -118,5 +118,17 @@ export async function loadAssets() {
       alias: "arrow",
       src: "/assets/arrow.webp",
     },
+    {
+      alias: "arrow_1",
+      src: "/assets/arrow_1.webp",
+    },
+    {
+      alias: "p1turn",
+      src: "/assets/p1turn.webp",
+    },
+    {
+      alias: "p2turn",
+      src: "/assets/p2turn.webp",
+    },
   ]);
 }

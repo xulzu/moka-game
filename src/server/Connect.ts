@@ -164,6 +164,14 @@ export class Connect {
       })
     );
   }
+  //抽牌阶段结束
+  drawEnd() {
+    this.res.send(
+      JSON.stringify({
+        type: "drawEnd",
+      })
+    );
+  }
   //攻击延时结算完成
   flushAttack() {
     this.res.send(

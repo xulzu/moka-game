@@ -2,7 +2,7 @@ import Router from "@koa/router";
 import { Connect } from "./Connect";
 import { GameZoom, Player } from "./GameZoom";
 import Koa from "koa";
-type PendingResolve = (value: string) => void;
+type PendingResolve = (t: number) => void;
 import cards from "./cards.json";
 import type { CardData } from "../baseType/base";
 import { Computer } from "./Computer";
@@ -10,22 +10,23 @@ import { Computer } from "./Computer";
 class Game {
   queue: { user: string; resolve: PendingResolve }[] = [];
   private allZoom: Record<string, Player> = {};
+  cancelFn: Record<string, () => void> = {};
   //等待匹配
-  async pending(user: string, onQuit: (cb: () => void) => void) {
+  async pending(user: string) {
     const idx = this.queue.findIndex((item) => item.user === user);
     if (idx !== -1) {
       this.queue.splice(idx, 1);
     }
-    let resolve_: (value: string) => void;
-    const promise = new Promise<string>((resolve, reject) => {
+    let resolve_: (t: number) => void;
+    const promise = new Promise<number>((resolve) => {
       resolve_ = resolve;
     });
     let timer: any = void 0;
     if (this.queue.length) {
       const { user: p2, resolve: resolve_2 } = this.queue.shift()!;
       const game = this.createGame(user, p2);
-      resolve_2?.(game.id);
-      resolve_!(game.id);
+      resolve_2?.(1);
+      resolve_!(1);
     } else {
       this.queue.push({ user, resolve: resolve_! });
       timer = setTimeout(() => {
@@ -35,21 +36,24 @@ class Game {
           const pd_id = Computer.randomId();
           const game = this.createGame(pd_id, user);
           new Computer(pd_id, game);
-          resolve_(game.id);
+          game.gameStart();
+          resolve_(1);
         }
-      }, 5 * 1000);
-      onQuit(() => {
+      }, 10 * 1000);
+      this.cancelFn[user] = () => {
         clearTimeout(timer);
+        resolve_(0);
         // 如果用户取消排队，则从队列中移除
         const idx = this.queue.findIndex((item) => item.user === user);
         if (idx !== -1) {
           this.queue.splice(idx, 1);
         }
-      });
+      };
     }
-    const roomId = await promise;
+    const res = await promise;
     clearTimeout(timer);
-    return roomId;
+    delete this.cancelFn[user];
+    return res;
   }
   getPlayer(id: string) {
     return this.allZoom[id];
@@ -57,8 +61,13 @@ class Game {
   createGame(user1: string, user2: string) {
     let player1 = new Player(user1);
     let player2 = new Player(user2);
+
     if (Math.random() < 0.5) {
       // 随机决定先手
+      [player1, player2] = [player2, player1];
+    }
+    if (player1.id.includes("pc")) {
+      // 人机始终后手
       [player1, player2] = [player2, player1];
     }
     const game = new GameZoom(player1, player2);
@@ -73,6 +82,13 @@ class Game {
     this.allZoom[player2.id] = player2;
     return game;
   }
+  cancel(user: string) {
+    if (this.cancelFn[user]) {
+      console.log("取消ok");
+    }
+    this.cancelFn[user]?.();
+    delete this.cancelFn[user];
+  }
 }
 
 const app = new Koa();
@@ -83,19 +99,37 @@ app.use((ctx, next) => {
   return next();
 });
 
-router.get("/api/pending", async (ctx) => {
-  const user = ctx.query.user as string;
-  ctx.cookies.set("user", user);
-  const roomId = await game.pending(user, (cb) => {
-    ctx.res.on("close", cb);
+router.get("/sse/pending", async (ctx) => {
+  console.log("排队");
+  ctx.set({
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
   });
-  ctx.body = roomId;
-});
+  ctx.status = 200;
+  ctx.flushHeaders();
+  ctx.res.write("retry: 0\n\n");
+  ctx.req.on("close", () => {
+    console.log("结束排队");
+    game.cancel(user);
+    ctx.res.end();
+  });
+  const user = ctx.user;
 
+  const ok = await game.pending(user);
+  ctx.res.write(`data:${ok}\n\n`);
+});
+router.get("/api/cancel", (ctx) => {
+  const user = ctx.user;
+  game.cancel(user);
+  ctx.body = "ok";
+});
 router.get("/sse/connect", async (ctx) => {
   const user = ctx.user;
   const player = game.getPlayer(user);
-
+  ctx.req.on("close", () => {
+    console.log("玩家断开");
+  });
   ctx.set({
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
@@ -142,9 +176,10 @@ router.get("/sse/connect", async (ctx) => {
     },
     selfTurn: currentPlayer.id === player.id,
   });
-  ctx.res.on("close", () => {
+  ctx.req.on("close", () => {
     player.connect = undefined;
   });
+  room.gameStart();
   await promise;
 });
 
@@ -188,7 +223,8 @@ router.get("/api/skipDefenseCard", (ctx) => {
   ctx.body = "ok";
 });
 router.get("/api/gameInfo", (ctx) => {
-  const user = ctx.user;
+  const user = ctx.query.user as string;
+  ctx.cookies.set("user", user);
   const player = game.getPlayer(user);
   if (!player) {
     ctx.status = 200;
