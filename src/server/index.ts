@@ -1,11 +1,12 @@
 import Router from "@koa/router";
 import { Connect } from "./Connect";
-import { GameZoom, Player } from "./GameZoom";
+import { GameZoom } from "./GameZoom";
 import Koa from "koa";
 type PendingResolve = (t: number) => void;
 import cards from "./cards.json";
 import type { CardData } from "../baseType/base";
 import { Computer } from "./Computer";
+import { Player } from "./Player";
 
 class Game {
   queue: { user: string; resolve: PendingResolve }[] = [];
@@ -39,7 +40,7 @@ class Game {
           game.gameStart();
           resolve_(1);
         }
-      }, 10 * 1000);
+      }, 5 * 1000);
       this.cancelFn[user] = () => {
         clearTimeout(timer);
         resolve_(0);
@@ -161,6 +162,7 @@ router.get("/sse/connect", async (ctx) => {
     self: {
       health: player.health,
       stackNum: player.allCards.length,
+      firstConnect: player.firstConnect,
       handcards: player.handCards?.map((item) => item.id) || [],
       defenseCards: player.defenseZones?.map((item) => item?.id || null) || [],
     },
@@ -175,6 +177,7 @@ router.get("/sse/connect", async (ctx) => {
     },
     selfTurn: currentPlayer.id === player.id,
   });
+  player.firstConnect = false;
   ctx.req.on("close", () => {
     player.connect = undefined;
   });

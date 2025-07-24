@@ -44,7 +44,7 @@ export class GameManager {
       type: "attack",
       name: "SQL注入",
       bg: "sql_inject",
-      description: "利用未过滤输入攻击数据库",
+      description: "利用未过滤输入攻击数据库利用未过滤输入攻击数据库",
       attack: 4,
       tag1: "DIRECT_ONLY",
       tag2: "WEB_ATTACK",
@@ -54,53 +54,25 @@ export class GameManager {
       duration: 0,
     } as unknown as CardData,
     {
-      id: 11,
-      type: "attack",
-      name: "钓鱼邮件",
-      description: "诱导泄露信息",
-      attack: 5,
-      _tempAttack: 3,
-      bg: "dyyj",
-      tag1: "SPLASH",
-      tag2: "SOCIAL_ENGINEERING",
-      tag3: null,
-      link: null,
-      linkEffect: [],
-      duration: 0,
-    } as unknown as CardData,
-    {
       id: 1,
-      type: "defense",
-      name: "安全培训",
-      bg: "px1",
-      description: "保护网络免受攻击",
-      defense: 2,
-      health: 3,
-      _tempDefense: 0,
-      buffTagert: "SOCIAL_ENGINEERING",
-      buffEffect: [
+      type: "attack",
+      name: "提权攻击",
+      description: "上一张打出web攻击时伤害+2",
+      attack: 2,
+      bg: "up_root",
+      tag1: "DIRECT_ONLY",
+      tag2: "SYSTEM_EXPLOIT",
+      tag3: "CHAINABLE",
+      link: "WEB_ATTACK",
+      linkEffect: [
         {
-          name: "d_1",
-          args: {
-            n: 1,
-          },
-        },
-      ],
-    },
-    {
-      id: 2,
-      type: "special",
-      bg: "ldxf",
-      name: "漏洞修复补丁",
-      description: "恢复一个防御卡或主机2点生命值",
-      effect: [
-        {
-          name: "s_1",
+          name: "a_1",
           args: {
             n: 2,
           },
         },
       ],
+      duration: 0,
     },
   ];
   turnIdxZone: TurnIdxZone;
@@ -188,6 +160,7 @@ export class GameManager {
 
     {
       //test
+      // this.pushCard(0, [1]);
     }
     {
       //初始化事件
@@ -299,7 +272,6 @@ export class GameManager {
     const hw = Card.width + (this.handCards.length - 1) * gap;
     const ew = this.app!.screen.width - hw;
     this.p1HandZone.x = ew / 2;
-    console.log(hw, "p1w");
     const p1Gap = 40;
     const maxAngles = [0, 0, 15, 20, 25, 30, 30, 30];
     const maxYs = [0, 0, 10, 10, 14, 18, 50, 50];
@@ -389,6 +361,23 @@ export class GameManager {
       return;
     }
     this.playAnimation.play(card);
+  }
+  //更新攻击牌的临时攻击力
+  upCardTempAttck(id: number, lastTempAttack: number) {
+    const hand = this.handCards.find((item) => item.cardData.id === id);
+    if (!hand || hand.cardData.type !== "attack") {
+      return;
+    }
+    hand.cardData._tempAttack = lastTempAttack;
+    hand.updateNum();
+  }
+  defenseUpdate(id: number, lastTempDefense: number) {
+    const hand = this.handCards.find((item) => item.cardData.id === id);
+    if (!hand || hand.cardData.type !== "defense") {
+      return;
+    }
+    hand.cardData._tempDefense = lastTempDefense;
+    hand.updateNum();
   }
   // 获取游戏状态（用于UI更新）
   getGameState() {

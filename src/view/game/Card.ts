@@ -5,6 +5,7 @@ import {
   Graphics,
   Sprite,
   Text,
+  TextStyle,
 } from "pixi.js";
 import { GameManager } from "./GameManager";
 import { actionDistance, screenWidth } from "./utils";
@@ -53,10 +54,11 @@ export class Card extends Container {
           style: {
             fill: "#581c87",
             fontSize: 11,
+            fontFamily: "SimSun",
           },
         });
         nameTxt.x = 10;
-        nameTxt.y = 4;
+        nameTxt.y = 5;
         nameContainer.addChild(nameTxt);
         this.addChild(nameContainer);
       }
@@ -70,11 +72,52 @@ export class Card extends Container {
         numContainer.y = 4;
         const txtContainer = new Container();
         this.txtContainer = txtContainer;
-        txtContainer.x = 8;
-        txtContainer.y = 3;
+        txtContainer.x = 9;
+        txtContainer.y = 1;
         numContainer.addChild(txtContainer);
         this.addChild(numContainer);
         this.updateNum();
+      }
+      {
+        //描述
+        const descContainer = new Container();
+        const txtMap = {
+          WEB_ATTACK: "web攻击",
+          SYSTEM_EXPLOIT: "系统漏洞",
+          SOCIAL_ENGINEERING: "社工",
+        };
+        if (cardData.type === "attack" && cardData.tag2 in txtMap) {
+          const txt = new Text({
+            text: `[${txtMap[cardData.tag2]}]`,
+            style: {
+              fontSize: 10,
+              fill: "#fff",
+              wordWrap: true,
+              wordWrapWidth: Card.width - 10,
+              breakWords: true,
+              fontFamily: "SimSun",
+            },
+          });
+          txt.y = -12;
+          descContainer.addChild(txt);
+        }
+        if (cardData.description) {
+          const txt = new Text({
+            text: cardData.description,
+            style: {
+              fontSize: 10,
+              fill: "#fff",
+              wordWrap: true,
+              wordWrapWidth: Card.width - 10,
+              breakWords: true,
+              fontFamily: "SimSun",
+            },
+          });
+          descContainer.addChild(txt);
+        }
+        descContainer.y = Card.height - 55;
+        descContainer.x = 5;
+        this.addChild(descContainer);
       }
     } else {
       this.cardData = {

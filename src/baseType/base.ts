@@ -33,7 +33,7 @@ export interface DefenseCardData {
   defense: number;
   _tempDefense?: number; //临时防御力
   health: number;
-  buffTagert: Tag2;
+  buffTagert?: Tag2;
   buffEffect: Effect[];
 }
 export interface SpecialCardData {

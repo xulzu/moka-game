@@ -1,5 +1,6 @@
 import { Connect } from "./Connect";
-import { GameZoom, Player } from "./GameZoom";
+import { GameZoom } from "./GameZoom";
+import { Player } from "./Player";
 
 export class Computer {
   id: string;
@@ -16,7 +17,6 @@ export class Computer {
     const curPlayer = id === p1.id ? p1 : p2;
     this.zoomRole = id === p1.id ? 0 : 1;
     this.self = curPlayer;
-    console.log(">>>>初始化人机", this.id, `座位号${this.zoomRole}`);
     curPlayer.connect = new Connect({
       send: (data) => {
         this.action(data);
@@ -33,9 +33,8 @@ export class Computer {
       this.waitLock = false;
       await this.randomPlayAttck();
       setTimeout(() => {
-        console.log("pc 回合结束");
         this.zoom?.turnEnd(this.zoomRole);
-      }, 2000);
+      }, 1000);
     } else if (type === "flushAttack") {
       this.waitFinish?.();
     } else if (type === "waitDefenseCard") {
@@ -57,30 +56,27 @@ export class Computer {
       const idx = Math.floor(Math.random() * attackIds.length);
       return attackIds[idx];
     };
-    await new Promise<void>((res) => {
-      setTimeout(() => {
-        res();
-      }, 3000);
-    });
-    const id = getRandomAttack();
-    if (id === -1) return;
-    this.zoom?.playCard(this.zoomRole, id);
-    await new Promise<void>((res) => {
-      if (this.self.danger === -1) {
-        res();
-      } else {
-        this.waitFinish = res;
-      }
-    });
 
-    const id2 = getRandomAttack();
-    if (id2 === -1) return;
-    await new Promise<void>((res) => {
-      setTimeout(() => {
-        res();
-      }, 2000);
-    });
-    this.zoom?.playCard(this.zoomRole, id2);
+    const playOneAttackCard = async () => {
+      const id = getRandomAttack();
+      if (id === -1) return;
+      await new Promise<void>((res) => {
+        setTimeout(() => {
+          res();
+        }, 2000);
+      });
+      this.zoom?.playCard(this.zoomRole, id);
+      await new Promise<void>((res) => {
+        if (this.self.danger === -1) {
+          res();
+        } else {
+          this.waitFinish = res;
+        }
+      });
+    };
+    //尝试打出两张攻击牌
+    await playOneAttackCard();
+    await playOneAttackCard();
   }
   //打防御牌
   async playDefenseCard() {

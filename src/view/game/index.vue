@@ -54,6 +54,44 @@
         alt=""
       />
     </div>
+    <div
+      class="fixed left-0 top-0 h-[100vh] w-[100vw] z-10 bg-[#060606c9]"
+      v-if="coin !== -1"
+    >
+      <div
+        class="w-[80px] h-[80px] transform-3d absolute left-1/2 -translate-x-1/2 top-[30vh] transition"
+        :class="{
+          coin_front: coin === 0,
+          coin_back: coin === 1,
+        }"
+      >
+        <img
+          src="/assets/coin0.webp"
+          width="80"
+          class="absolute left-0 top-0 rotate-x-180"
+          style="backface-visibility: hidden"
+        />
+        <img
+          src="/assets/coin1.webp"
+          width="80"
+          style="backface-visibility: hidden"
+          class="absolute left-0 top-0"
+        />
+      </div>
+
+      <img
+        src="/assets/front.webp"
+        v-if="coin === 0"
+        alt=""
+        class="absolute left-1/2 -translate-x-1/2 top-[48vh] scale-[0.75] txtmove"
+      />
+      <img
+        src="/assets/back.webp"
+        v-else-if="coin === 1"
+        alt=""
+        class="absolute left-1/2 -translate-x-1/2 top-[48vh] scale-[0.75] txtmove"
+      />
+    </div>
   </div>
 </template>
 <script lang="ts" setup>
@@ -80,11 +118,13 @@ import axios from "axios";
 import { loadAssets } from "../utils/loadAssets";
 
 const selfTurn = ref(true);
-const time = ref(0);
+const time = ref(-1);
 
 const selfWait = ref(false);
 const timeWait = ref(0);
 const win = ref("");
+const coin = ref(-1);
+
 onMounted(() => {
   gsap.registerPlugin(PixiPlugin);
   PixiPlugin.registerPIXI(PIXI);
@@ -138,8 +178,13 @@ onMounted(() => {
         }
         {
           //初始化回合指示区
-          console.log(initData.selfTurn, "selfTurn");
           gameManager.turnIdxZone.toggle(initData.selfTurn);
+          if (initData?.self?.firstConnect) {
+            coin.value = initData?.selfTurn ? 0 : 1;
+            setTimeout(() => {
+              coin.value = -1;
+            }, 1700);
+          }
         }
         {
           // 初始化牌堆
@@ -185,6 +230,12 @@ onMounted(() => {
         }
       } else if (data.type === "playAnimation") {
         gameManager.playCardAnimation(data.data);
+      } else if (data.type === "attackUpdate") {
+        const { id, lastTempAttack } = data;
+        gameManager.upCardTempAttck(id, lastTempAttack);
+      } else if (data.type === "defenseUpdate") {
+        const { id, lastTempDefense } = data;
+        gameManager.defenseUpdate(id, lastTempDefense);
       } else if (data.type === "gameOver") {
         win.value = data.data;
         sse.close();
@@ -222,5 +273,49 @@ function endTurn() {
 
 .element {
   animation: slideDown 0.7s ease forwards;
+}
+.coin_front {
+  will-change: transform;
+  animation: coin_front 0.7s ease-in-out forwards;
+}
+.coin_back {
+  will-change: transform;
+  animation: coin_back 0.7s ease-in-out forwards;
+}
+
+@keyframes coin_back {
+  0% {
+    transform: rotateX(0deg) translateY(0px);
+  }
+  50% {
+    transform: rotateX(90deg) translateY(-140px);
+  }
+  100% {
+    transform: rotateX(180deg) translateY(0px);
+  }
+}
+@keyframes coin_front {
+  0% {
+    transform: rotateX(180deg) translateY(0px);
+  }
+  50% {
+    transform: rotateX(90deg) translateY(-140px);
+  }
+  100% {
+    transform: rotateX(0deg) translateY(0px);
+  }
+}
+.txtmove {
+  animation: move 0.4s ease-in-out;
+}
+@keyframes move {
+  0% {
+    transform: translateY(100px);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(0px);
+    opacity: 1;
+  }
 }
 </style>

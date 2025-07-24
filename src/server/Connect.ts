@@ -16,6 +16,7 @@ export class Connect {
       health: number;
       handcards: number[];
       stackNum: number;
+      firstConnect: boolean;
       defenseCards: (number | null)[];
     };
     enemy: {
@@ -177,6 +178,24 @@ export class Connect {
     this.res.send(
       JSON.stringify({
         type: "flushAttack",
+      })
+    );
+  }
+  attackUpdate(id: number, lastTempAttack: number) {
+    this.res.send(
+      JSON.stringify({
+        type: "attackUpdate",
+        id,
+        lastTempAttack,
+      })
+    );
+  }
+  defenseUpdate(id: number, lastTempDefense: number) {
+    this.res.send(
+      JSON.stringify({
+        type: "defenseUpdate",
+        id,
+        lastTempDefense,
       })
     );
   }
