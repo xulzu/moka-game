@@ -20,6 +20,7 @@
     <img
       :src="btn2"
       alt=""
+      @click="$router.push('/cards')"
       srcset=""
       width="90"
       class="shdaow_ absolute top-[calc(40vh+120px)] right-[16vw]"

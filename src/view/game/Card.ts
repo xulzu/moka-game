@@ -1,4 +1,5 @@
 import {
+  Application,
   Assets,
   Container,
   FederatedPointerEvent,
@@ -24,10 +25,11 @@ export class Card extends Container {
   moveCard?: Container;
   detailCard?: Container;
   txtContainer?: Container;
+  numContainer?: Container;
   detailTimer?: any;
   playDistance: number = 0;
   romveDetailStep = 0;
-  constructor(x: number, y: number, cardData?: CardData) {
+  constructor(x: number, y: number, cardData?: CardData, app?: Application) {
     super();
     this.id = id++;
     if (cardData) {
@@ -65,6 +67,7 @@ export class Card extends Container {
       {
         //数值
         const numContainer = new Container();
+        this.numContainer = numContainer;
         const numBg = new Sprite(Assets.get("card_num"));
         numBg.setSize(28, 28);
         numContainer.addChild(numBg);
@@ -72,7 +75,6 @@ export class Card extends Container {
         numContainer.y = 4;
         const txtContainer = new Container();
         this.txtContainer = txtContainer;
-        txtContainer.x = 9;
         txtContainer.y = 1;
         numContainer.addChild(txtContainer);
         this.addChild(numContainer);
@@ -136,8 +138,10 @@ export class Card extends Container {
     this.y = y;
 
     this.interactive = true;
-    const gameManager = GameManager.getInstance();
-    const vh100 = gameManager.app?.screen.height || 0;
+    const gameManager = app ? void 0 : GameManager.getInstance();
+    const vh100 = app
+      ? app.screen.height
+      : gameManager?.app?.screen.height || 0;
     this.playDistance = vh100 - Card.height - 10;
     this.on("pointerdown", this.dragStart.bind(this));
     this.on("pointerup", this.dragEnd.bind(this));
@@ -157,33 +161,39 @@ export class Card extends Container {
   }
   // 更新数值
   updateNum() {
-    this.txtContainer?.removeChildren();
-    let num = "~";
-    let color = "#ffffff";
-    if (this.cardData.type === "attack") {
-      num = (
-        this.cardData.attack + (this.cardData._tempAttack || 0)
-      ).toString();
-      if (this.cardData._tempAttack) {
-        color = "#881337";
+    if (this.txtContainer) {
+      this.txtContainer?.removeChildren();
+      let num = "~";
+      let color = "#ffffff";
+      if (this.cardData.type === "attack") {
+        num = (
+          this.cardData.attack + (this.cardData._tempAttack || 0)
+        ).toString();
+        if (this.cardData._tempAttack) {
+          color = "#881337";
+        }
+      } else if (this.cardData.type === "defense") {
+        num = (
+          this.cardData.defense + (this.cardData._tempDefense || 0)
+        ).toString();
+        if (this.cardData._tempDefense) {
+          color = "#064e3b";
+        }
       }
-    } else if (this.cardData.type === "defense") {
-      num = (
-        this.cardData.defense + (this.cardData._tempDefense || 0)
-      ).toString();
-      if (this.cardData._tempDefense) {
-        color = "#064e3b";
-      }
+      const txt = new Text({
+        text: num,
+        style: {
+          fill: color,
+          fontSize: 19,
+          fontWeight: "bold",
+        },
+      });
+      this.txtContainer?.addChild(txt);
+      this.txtContainer.x =
+        (this.numContainer!.width - this.txtContainer.width) / 2;
+      this.txtContainer.y =
+        (this.numContainer!.height - this.txtContainer.height) / 2;
     }
-    const txt = new Text({
-      text: num,
-      style: {
-        fill: color,
-        fontSize: 19,
-        fontWeight: "bold",
-      },
-    });
-    this.txtContainer?.addChild(txt);
   }
   dragStart(event: FederatedPointerEvent) {
     if (!this.draggle) return;

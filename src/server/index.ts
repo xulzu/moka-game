@@ -99,7 +99,9 @@ app.use((ctx, next) => {
   ctx.user = ctx.cookies.get("user") || "";
   return next();
 });
-
+router.get("/api/allCards", (ctx) => {
+  ctx.body = cards;
+});
 router.get("/sse/pending", async (ctx) => {
   console.log("排队");
   ctx.set({
@@ -272,6 +274,7 @@ router.get("/api/debug", (ctx) => {
   console.log(res, "res");
   ctx.body = res;
 });
+
 app.use(router.routes());
 app.use(router.allowedMethods());
 const PORT = 4004;
