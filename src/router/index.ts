@@ -4,6 +4,7 @@ import HomeView from "../view/home/index.vue";
 import GameView from "../view/game/index.vue";
 import Pend from "../view/home/pending.vue";
 import Cards from "../view/home/cards.vue";
+import Top from "../view/home/top.vue";
 const routes = [
   { path: "/", component: HomeView },
   { path: "/game", component: GameView },
@@ -14,6 +15,10 @@ const routes = [
   {
     path: "/cards",
     component: Cards,
+  },
+  {
+    path: "/top",
+    component: Top,
   },
 ];
 

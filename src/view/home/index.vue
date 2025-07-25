@@ -14,6 +14,7 @@
       :src="btn1"
       alt=""
       srcset=""
+      @click="$router.push('/top')"
       width="90"
       class="shdaow_ absolute top-[calc(40vh+120px)] left-[16vw]"
     />
