@@ -3,12 +3,11 @@ import { Connect } from "./Connect";
 import { GameZoom } from "./GameZoom";
 import Koa from "koa";
 type PendingResolve = (t: number) => void;
-import cards from "./cards.json";
 import type { CardData } from "../baseType/base";
 import { Computer } from "./Computer";
 import { Player } from "./Player";
 import { DataStore } from "./sqlite";
-import { useId } from "vue";
+import { Config } from "./Configs";
 
 class Game {
   queue: { user: string; resolve: PendingResolve }[] = [];
@@ -122,7 +121,7 @@ router.get("/api/list", (ctx) => {
   ctx.body = list;
 });
 router.get("/api/allCards", (ctx) => {
-  ctx.body = cards;
+  ctx.body = Config.AllCards;
 });
 router.get("/sse/pending", async (ctx) => {
   ctx.set({
@@ -179,7 +178,7 @@ router.get("/sse/connect", async (ctx) => {
   const p1 = DataStore.getUser(player.id);
   const p2 = DataStore.getUser(player.enemy!.id);
   connect.initGame({
-    cards: cards as CardData[],
+    cards: Config.AllCards as CardData[],
     self: {
       name: p1.name,
       avatar: p1.avatar,
@@ -312,7 +311,7 @@ router.get("/api/lose", (ctx) => {
 });
 app.use(router.routes());
 app.use(router.allowedMethods());
-const PORT = 4004;
+const PORT = Config.PORT;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });

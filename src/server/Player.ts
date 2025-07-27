@@ -6,11 +6,11 @@ import {
   type Effect,
   type SpecialCardData,
 } from "../baseType/base";
-import cards from "./cards.json";
 import { Connect } from "./Connect";
 import EventEmitter from "events";
 import type { GameZoom } from "./GameZoom";
 import { DataStore } from "./sqlite";
+import { Config } from "./Configs";
 
 export class Player {
   id: string;
@@ -43,12 +43,10 @@ export class Player {
   constructor(id: string) {
     this.id = id;
     this.allCards = shuffle(
-      cards
-        .filter((item) => !item.off)
-        .map((item, idx) => {
-          item.id = idx;
-          return item;
-        })
+      Config.AllCards.map((item, idx) => {
+        item.id = idx;
+        return item;
+      })
     ) as CardData[];
   }
 
