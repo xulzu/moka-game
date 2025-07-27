@@ -76,9 +76,10 @@ function close() {
 load();
 async function load() {
   const { data } = await axios.get("/api/allCards");
-  maxHeight.value = (190 * (data.length || 0)) / 3;
+  maxHeight.value = (200 * (data.length || 0)) / 3;
   await nextTick();
   allCards.value = data;
+  totol();
   const app = new Application();
   await loadAssets();
   await app.init({
@@ -103,7 +104,6 @@ async function load() {
     card.y = row * (card.height + 10);
     idx++;
   }
-  console.log(cardH);
 }
 
 function click(event: any) {
@@ -116,8 +116,21 @@ function click(event: any) {
   if (card) {
     clickCard(card);
   }
-  console.log(`鼠标点击位置：(${x}, ${y}) ${width}`);
-  console.log(col, row);
+}
+
+function totol() {
+  const attackCard = allCards.value.filter(
+    (item: any) => item.type === "attack"
+  );
+  const defenseCard = allCards.value.filter(
+    (item: any) => item.type === "defense"
+  );
+  console.log(
+    `总攻击${attackCard.reduce((a: number, b: any) => a + b.attack, 0)}点`
+  );
+  console.log(
+    `总防御${defenseCard.reduce((a: number, b: any) => a + b.defense, 0)}点`
+  );
 }
 </script>
 <style lang="less" scoped></style>

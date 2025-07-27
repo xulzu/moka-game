@@ -38,43 +38,8 @@ export class GameManager {
   p1HandZone: Container;
   p2HandZone: Container;
   activeZone: ActiveZone;
-  allCards: CardData[] = [
-    {
-      id: 0,
-      type: "attack",
-      name: "SQL注入",
-      bg: "sql_inject",
-      description: "利用未过滤输入攻击数据库利用未过滤输入攻击数据库",
-      attack: 4,
-      tag1: "DIRECT_ONLY",
-      tag2: "WEB_ATTACK",
-      tag3: undefined,
-      link: undefined,
-      linkEffect: [],
-      duration: 0,
-    } as unknown as CardData,
-    {
-      id: 1,
-      type: "attack",
-      name: "提权攻击",
-      description: "上一张打出web攻击时伤害+2",
-      attack: 2,
-      bg: "up_root",
-      tag1: "DIRECT_ONLY",
-      tag2: "SYSTEM_EXPLOIT",
-      tag3: "CHAINABLE",
-      link: "WEB_ATTACK",
-      linkEffect: [
-        {
-          name: "a_1",
-          args: {
-            n: 2,
-          },
-        },
-      ],
-      duration: 0,
-    },
-  ];
+  cardDetailZone: Container;
+  allCards: CardData[] = [];
   turnIdxZone: TurnIdxZone;
   healthZoneP1: Health;
   healthZoneP2: Health;
@@ -146,6 +111,11 @@ export class GameManager {
       app.stage.addChild(this.waitDefenseZone);
     }
     {
+      //卡牌详情展示区
+      this.cardDetailZone = new Container();
+      app.stage.addChild(this.cardDetailZone);
+    }
+    {
       //手牌区初始化
       const topCardContainer = new Container();
       const bottomCardContainer = new Container();
@@ -165,9 +135,7 @@ export class GameManager {
     {
       //初始化事件
       window.addEventListener("click", () => {
-        for (const card of this.handCards) {
-          card.clearDetail();
-        }
+        this.cardDetailZone.removeChildren();
       });
     }
   }

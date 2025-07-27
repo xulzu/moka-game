@@ -1,5 +1,6 @@
 <template>
   <div
+    @click="fullScreen"
     class="h-[100vh] w-[100vw] flex justify-center items-center relative flex-col bg"
   >
     <img
@@ -51,12 +52,30 @@ if (!user.value) {
   user.value = route.query.id as string;
 }
 localStorage.setItem("user", user.value);
-async function start() {
-  try {
+init();
+function init() {
+  axios.get("/api/init", {
+    params: {
+      user: user.value,
+    },
+  });
+}
+let isTips = ref(false);
+let isTipsCache = localStorage.getItem("isTips");
+if (isTipsCache) {
+  isTips.value = true;
+}
+function start() {
+  if (!isTips.value) {
+    localStorage.setItem("isTips", "1");
+    router.push("/tips");
+  } else {
     router.push(`/pend`);
-  } catch (error) {
-    showToast(error + "");
   }
+}
+
+function fullScreen() {
+  // document.documentElement.requestFullscreen();
 }
 </script>
 <style lang="less" scoped>

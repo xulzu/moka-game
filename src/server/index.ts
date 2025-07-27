@@ -7,6 +7,8 @@ import cards from "./cards.json";
 import type { CardData } from "../baseType/base";
 import { Computer } from "./Computer";
 import { Player } from "./Player";
+import { DataStore } from "./sqlite";
+import { useId } from "vue";
 
 class Game {
   queue: { user: string; resolve: PendingResolve }[] = [];
@@ -34,7 +36,7 @@ class Game {
         const idx = this.queue.findIndex((item) => item.user === user);
         if (idx !== -1) {
           this.queue.splice(idx, 1);
-          const pd_id = Computer.randomId();
+          const pd_id = Computer.getId();
           const game = this.createGame(pd_id, user);
           new Computer(pd_id, game);
           game.gameStart();
@@ -67,7 +69,7 @@ class Game {
       // 随机决定先手
       [player1, player2] = [player2, player1];
     }
-    if (player1.id.includes("pc")) {
+    if (player1.id === "roobot") {
       // 人机始终后手
       [player1, player2] = [player2, player1];
     }
@@ -99,11 +101,30 @@ app.use((ctx, next) => {
   ctx.user = ctx.cookies.get("user") || "";
   return next();
 });
+router.get("/api/init", (ctx) => {
+  const userid = ctx.query.user as string;
+  console.log(userid, "-");
+  ctx.cookies.set("user", userid);
+  const user = DataStore.getUser(userid);
+  if (!user) {
+    DataStore.addUser({
+      userid: String(userid),
+      name: String(userid),
+      avatar: "/assets/user_ico.webp",
+      score: 0,
+    });
+  }
+  ctx.status = 200;
+});
+router.get("/api/list", (ctx) => {
+  const userId = ctx.user;
+  const list = DataStore.getTopUsers();
+  ctx.body = list;
+});
 router.get("/api/allCards", (ctx) => {
   ctx.body = cards;
 });
 router.get("/sse/pending", async (ctx) => {
-  console.log("排队");
   ctx.set({
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
@@ -117,7 +138,6 @@ router.get("/sse/pending", async (ctx) => {
     ctx.res.end();
   });
   const user = ctx.user;
-
   const ok = await game.pending(user);
   ctx.res.write(`data:${ok}\n\n`);
 });
@@ -129,9 +149,6 @@ router.get("/api/cancel", (ctx) => {
 router.get("/sse/connect", async (ctx) => {
   const user = ctx.user;
   const player = game.getPlayer(user);
-  ctx.req.on("close", () => {
-    console.log("玩家断开");
-  });
   ctx.set({
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
@@ -159,9 +176,13 @@ router.get("/sse/connect", async (ctx) => {
   player.connect = connect;
   const room = player.room!;
   const currentPlayer = room.currentPlayer === 0 ? room.player1 : room.player2;
+  const p1 = DataStore.getUser(player.id);
+  const p2 = DataStore.getUser(player.enemy!.id);
   connect.initGame({
     cards: cards as CardData[],
     self: {
+      name: p1.name,
+      avatar: p1.avatar,
       health: player.health,
       stackNum: player.allCards.length,
       firstConnect: player.firstConnect,
@@ -169,6 +190,8 @@ router.get("/sse/connect", async (ctx) => {
       defenseCards: player.defenseZones?.map((item) => item?.id || null) || [],
     },
     enemy: {
+      name: p2.name,
+      avatar: p2.avatar,
       id: player.enemy?.id || "",
       machine: player.enemy?.machine || false,
       health: player.enemy?.health || 0,
@@ -227,24 +250,25 @@ router.get("/api/skipDefenseCard", (ctx) => {
   ctx.body = "ok";
 });
 router.get("/api/gameInfo", (ctx) => {
-  const user = ctx.query.user as string;
-  ctx.cookies.set("user", user);
+  const user = ctx.user;
   const player = game.getPlayer(user);
   if (!player) {
     ctx.status = 200;
     ctx.body = null;
     return;
   }
-  const play_t = player.enemy;
+  const play_t = player.enemy!;
+  const p1 = DataStore.getUser(player.id) as any;
+  const p2 = DataStore.getUser(play_t.id) as any;
 
   ctx.body = {
     p1Info: {
-      name: player.name,
-      src: player.imgSrc,
+      name: p1.name,
+      src: p1.avatar,
     },
     p2Info: {
-      name: play_t?.name,
-      src: play_t?.imgSrc,
+      name: p2?.name,
+      src: p2?.avatar,
     },
   };
 });
@@ -274,7 +298,18 @@ router.get("/api/debug", (ctx) => {
   console.log(res, "res");
   ctx.body = res;
 });
-
+router.get("/api/lose", (ctx) => {
+  const user = ctx.user;
+  const player = game.getPlayer(user);
+  if (!player) {
+    ctx.status = 400;
+    ctx.body = "对局不存在";
+    return;
+  }
+  player.health = 0;
+  player.tryGameOver();
+  ctx.status = 200;
+});
 app.use(router.routes());
 app.use(router.allowedMethods());
 const PORT = 4004;

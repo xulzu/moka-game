@@ -28,11 +28,17 @@ db.exec(`
 const insertUser = db.prepare(`
   INSERT INTO users (userid, name,avatar, score) VALUES (?, ?, ?, ?)
 `);
+const updateScore = db.prepare(`
+  UPDATE users SET score = ? WHERE userid = ?
+`);
+
 const getUserByUserid = db.prepare(`
   SELECT * FROM users WHERE userid = ?
 `);
 const topUsers = db.prepare(`
   SELECT * FROM users
+  WHERE
+    userid != 'roobot'
   ORDER BY score DESC
   LIMIT 100
 `);
@@ -53,6 +59,12 @@ const last3Matches = db.prepare(`
   LIMIT 3
 `);
 
+const last1Matche = db.prepare(`
+  SELECT *
+  FROM matches
+  ORDER BY datetime(created_at) DESC
+  LIMIT 1
+`);
 function addUser(user: {
   userid: string;
   name: string;
@@ -63,7 +75,15 @@ function addUser(user: {
 }
 
 function getUser(userid: string) {
-  return getUserByUserid.get(userid);
+  return getUserByUserid.get(userid) as any;
+}
+
+function updateUserScore(userId: string, score: number) {
+  const user = getUser(userId) as any;
+  if (!user) {
+    throw "用户不存在，更新分数失败";
+  }
+  updateScore.run(Math.max(0, score + (user.score as number)), userId);
 }
 function getTopUsers() {
   return topUsers.all();
@@ -87,5 +107,16 @@ function addMatch(match: {
 function getLast3Matches(userid: string) {
   return last3Matches.all({ userid });
 }
-console.log(getLast3Matches("1"));
-// console.log(getLast3Matches("1"));
+function getLast1Match() {
+  return last1Matche.all();
+}
+
+export const DataStore = {
+  addUser,
+  getUser,
+  getTopUsers,
+  addMatch,
+  getLast3Matches,
+  getLast1Match,
+  updateUserScore,
+};

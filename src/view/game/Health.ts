@@ -13,16 +13,20 @@ export class Health extends Container {
   dangerContainer: Container;
   boomContainer: Sprite;
   boomGasp?: any;
+  bgContainer: Container;
   constructor() {
     super();
+    const bgContainer = new Container();
+    this.addChild(bgContainer);
+    this.bgContainer = bgContainer;
     const bgSprite = new Sprite(Assets.get("user_ico"));
     bgSprite.width = Health.width;
     bgSprite.height = Health.height;
     const mask = new Graphics();
     mask.filletRect(0, 0, Health.width, Health.height, 10).fill("transparent");
-    this.addChild(mask);
-    this.addChild(bgSprite);
     bgSprite.mask = mask;
+    bgContainer.addChild(bgSprite, mask);
+
     const border = mask.clone();
     mask.stroke({
       width: 3,
@@ -124,6 +128,23 @@ export class Health extends Container {
     this.addChild(this.dangerContainer);
 
     this.updateHealth(15);
+  }
+
+  async updateAvatar(img: string) {
+    let avatar: any;
+    try {
+      avatar = await Assets.load(img);
+    } catch {
+      avatar = Assets.get("user_ico");
+    }
+    const bgSprite = new Sprite(avatar);
+    bgSprite.width = Health.width;
+    bgSprite.height = Health.height;
+    const mask = new Graphics();
+    mask.filletRect(0, 0, Health.width, Health.height, 10).fill("transparent");
+    bgSprite.mask = mask;
+    this.bgContainer.removeChildren();
+    this.bgContainer.addChild(bgSprite, mask);
   }
   updateHealth(health: number) {
     const oldHealth = this.health;

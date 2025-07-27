@@ -1,6 +1,7 @@
 import { Connect } from "./Connect";
 import { GameZoom } from "./GameZoom";
 import { Player } from "./Player";
+import { DataStore } from "./sqlite";
 
 export class Computer {
   id: string;
@@ -92,7 +93,17 @@ export class Computer {
     }
     this.waitLock = false;
   }
-  static randomId() {
-    return "pc_" + Date.now() + "";
+  static getId() {
+    const pcid = "roobot";
+    const pcInfo = DataStore.getUser(pcid);
+    if (!pcInfo) {
+      DataStore.addUser({
+        userid: pcid,
+        name: "神秘玩家",
+        avatar: "",
+        score: 0,
+      });
+    }
+    return pcid;
   }
 }

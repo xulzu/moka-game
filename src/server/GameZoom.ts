@@ -10,40 +10,42 @@ import cards from "./cards.json";
 import { Connect } from "./Connect";
 import EventEmitter from "events";
 import type { Player } from "./Player";
+import { DataStore } from "./sqlite";
 
 export class GameZoom extends EventEmitter {
   player1: Player;
   player2: Player;
   playerPending?: () => void; //玩家上线回调
-  id: string;
   currentPlayer: 0 | 1 = 0;
   timeoutTimer?: any;
   waitTimer?: any;
+  startTimer: any;
   turnIdx: number = 0;
   started = false;
   gameFinish = false;
+
+  winner_id = "";
   constructor(player1: Player, player2: Player) {
     super();
     this.player1 = player1;
     this.player2 = player2;
     this.player1.enemy = player2;
     this.player2.enemy = player1;
-    this.id = createRandomId();
-    console.log(
-      "先手玩家",
-      this.currentPlayer,
-      `p1:${this.player1.id} p2:${(this, player2.id)}`
-    );
+    this.startTimer = setTimeout(() => {
+      this.gameOver();
+    }, 30 * 1000);
   }
   gameStart() {
     if (this.started) return;
+    clearTimeout(this.startTimer);
     // 游戏开始，初始化游戏状态,并开始第一回合倒计时
     this.player1.drawCard(2);
     this.player2.drawCard(2);
-    this.nextTurn();
     this.started = true;
+    this.nextTurn();
   }
   playCard(rule: 0 | 1, id: number) {
+    if (this.gameFinish) return;
     const player = rule === 0 ? this.player1 : this.player2;
     const player_t = player.enemy!;
     const card = player.handCards.find((c) => c.id === id);
@@ -56,11 +58,9 @@ export class GameZoom extends EventEmitter {
     }
     const ok = player.playCard(id);
     if (ok && player.danger !== -1) {
-      console.log("等待防御");
       this.waitDefenseCard(id);
     }
     if (ok && player.danger === -1) {
-      console.log("播放打出效果");
       player.connect?.playAnimation(id);
       player_t.connect?.playAnimation(id);
     }
@@ -87,6 +87,7 @@ export class GameZoom extends EventEmitter {
   }
   // 某个玩家跳过防御卡打出
   skipDefenseCard(rule: 0 | 1) {
+    if (this.gameFinish) return;
     if (this.currentPlayer === rule) {
       return;
     }
@@ -102,15 +103,13 @@ export class GameZoom extends EventEmitter {
   }
   //玩家p1 or p2 回合结束
   turnEnd(rule: 0 | 1) {
-    console.log(rule, "turnEnd");
+    if (this.gameFinish) return;
     const player = rule === 0 ? this.player1 : this.player2;
     if (this.currentPlayer !== rule) {
-      console.log("不是你的回合");
       player.connect?.optError("目前不是你的回合~");
       return;
     }
     if (player.danger !== -1) {
-      console.log("防御卡未结算");
       player.connect?.optError("等待对方打出防御卡");
       return;
     }
@@ -132,7 +131,7 @@ export class GameZoom extends EventEmitter {
     const player_t = this.currentPlayer === 0 ? this.player2 : this.player1;
     console.log(this.currentPlayer, player.id, "回合开始");
     player.turnStart();
-    const timeout = 20;
+    const timeout = 30;
     let timeIdx = 0;
     this.timeoutTimer = setInterval(() => {
       if (player.danger !== -1) {
@@ -157,11 +156,25 @@ export class GameZoom extends EventEmitter {
     }, 1000);
   }
   gameOver() {
+    if (this.gameFinish) return;
+    clearInterval(this.timeoutTimer);
+    clearInterval(this.waitTimer);
+
     this.gameFinish = true;
     this.emit("gameOver");
+    if (this.started) {
+      const winner =
+        this.player1.id === this.winner_id ? this.player1 : this.player2;
+      const failer = winner.enemy!;
+      DataStore.updateUserScore(winner.id, winner.score);
+      DataStore.updateUserScore(failer.id, failer.score);
+      DataStore.addMatch({
+        player1_id: this.player1.id,
+        player2_id: this.player2.id,
+        winner_id: this.winner_id,
+        score1: this.player1.score,
+        score2: this.player2.score,
+      });
+    }
   }
-}
-
-function createRandomId() {
-  return Math.random().toString(36).substring(2, 10);
 }

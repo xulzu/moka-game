@@ -53,6 +53,11 @@
         class="absolute w-[250px] left-1/2 -translate-x-1/2 top-[30vh] element"
         alt=""
       />
+      <div
+        class="absolute bottom-[40vh] left-1/2 -translate-1/2 text-[#bb7c00] text-[16px] txtmove"
+      >
+        积分 {{ score >= 0 ? `+${score}` : score }}
+      </div>
     </div>
     <div
       class="fixed left-0 top-0 h-[100vh] w-[100vw] z-10 bg-[#060606c9]"
@@ -93,6 +98,7 @@
       />
     </div>
   </div>
+  <Lose ref="loseRef"></Lose>
 </template>
 <script lang="ts" setup>
 import {
@@ -111,18 +117,20 @@ import { Health } from "./Health";
 import { GameManager } from "./GameManager";
 import { gsap } from "gsap";
 import { PixiPlugin } from "gsap/PixiPlugin";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, useTemplateRef } from "vue";
 import type { CardData } from "../../baseType/base";
 import { showToast } from "vant";
 import axios from "axios";
 import { loadAssets } from "../utils/loadAssets";
-
+import Lose from "./lose.vue";
+const loseRef = useTemplateRef("loseRef");
 const selfTurn = ref(true);
 const time = ref(-1);
 
 const selfWait = ref(false);
 const timeWait = ref(0);
 const win = ref("");
+const score = ref(0);
 const coin = ref(-1);
 
 onMounted(() => {
@@ -151,6 +159,19 @@ onMounted(() => {
     document.getElementById("pixi-container")!.appendChild(app.canvas);
     const gameManager = new GameManager(app);
 
+    const setting = new Sprite(await Assets.load("/assets/set.webp"));
+    setting.width = 30;
+    setting.height = 30;
+    setting.x = 15;
+    setting.y = 15;
+    setting.interactive = true;
+    setting.on("pointerup", () => {
+      setTimeout(() => {
+        loseRef.value?.openSet();
+      }, 100);
+    });
+    app.stage.addChild(setting);
+
     gameManager.turnIdxZone.emitter.on("toggle", (self) => {
       selfTurn.value = self;
     });
@@ -163,7 +184,6 @@ onMounted(() => {
       if (data.type === "error") {
         showToast(data.data);
       } else if (data.type === "initGame") {
-        console.log(data.data);
         const initData = data.data;
         gameManager.allCards = initData?.cards || [];
         {
@@ -190,6 +210,17 @@ onMounted(() => {
           // 初始化牌堆
           gameManager.stackP1.updateNum(initData?.self?.stackNum || 0);
           gameManager.stackP2.updateNum(initData?.enemy?.stackNum || 0);
+        }
+        {
+          //初始化头像
+          gameManager.healthZoneP1.updateAvatar(
+            initData?.self?.avatar || "/assets/ico1.webp"
+          );
+          if (initData.enemy?.id !== "roobot") {
+            gameManager.healthZoneP2.updateAvatar(
+              initData?.enemy?.avatar || "/assets/ico1.webp"
+            );
+          }
         }
       } else if (data.type === "turnStart") {
         gameManager.turnIdxZone.toggle(data.self);
@@ -238,6 +269,7 @@ onMounted(() => {
         gameManager.defenseUpdate(id, lastTempDefense);
       } else if (data.type === "gameOver") {
         win.value = data.data;
+        score.value = data.score;
         sse.close();
       }
     };
@@ -273,6 +305,9 @@ function endTurn() {
 
 .element {
   animation: slideDown 0.7s ease forwards;
+}
+.txtmove {
+  animation: txtmoveA 0.7s ease-in-out forwards;
 }
 .coin_front {
   will-change: transform;
@@ -314,6 +349,16 @@ function endTurn() {
     opacity: 0.5;
   }
   100% {
+    transform: translateY(0px);
+    opacity: 1;
+  }
+}
+@keyframes txtmoveA {
+  from {
+    transform: translateY(-100px);
+    opacity: 0.5;
+  }
+  to {
     transform: translateY(0px);
     opacity: 1;
   }

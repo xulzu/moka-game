@@ -1,7 +1,5 @@
 <template>
-  <div v-if="page === 0"></div>
   <div
-    v-if="page === 1"
     class="h-[100vh] relative w-[100vw] bg-[#201542] text-white flex flex-col items-center pt-[10vh]"
   >
     <img src="/assets/pend_bg.webp" class="rotate" alt="" width="200" />
@@ -25,31 +23,6 @@
       <div class="relative z-10" @click="cancel">取消匹配</div>
     </div>
   </div>
-  <div v-if="page === 2" class="h-[100vh] w-[100vw] bg text-white">
-    <div class="fixed top-[17vh]">
-      <img src="/assets/loading_tag1.webp" class="w-[220px]" alt="" />
-      <span class="absolute top-[10px] left-[10px] text-gray-300">
-        {{ p2Info.name }}
-      </span>
-      <div
-        class="absolute left-[100px] -top-[35px] border-[2px] border-solid rounded-[10px] overflow-hidden border-gray-300"
-      >
-        <img :src="p2Info.src" class="w-[70px]" alt="" />
-      </div>
-    </div>
-    <div class="fixed bottom-[17vh] right-0">
-      <img src="/assets/loading_tag2.webp" class="w-[220px]" alt="" />
-      <span class="absolute top-[10px] right-[10px] text-gray-300">
-        {{ p1Info.name }}
-      </span>
-      <div
-        class="absolute right-[100px] -top-[35px] border-[2px] border-solid rounded-[10px] overflow-hidden border-gray-300"
-      >
-        <img :src="p1Info.src" class="w-[70px]" alt="" />
-      </div>
-    </div>
-    <div class="fixed bottom-[20px] left-1/2 -translate-x-1/2">加载中...</div>
-  </div>
 </template>
 <script lang="ts" setup>
 import axios from "axios";
@@ -58,26 +31,15 @@ import { useRouter } from "vue-router";
 import { onBeforeUnmount, ref } from "vue";
 import img from "/assets/user_ico.webp";
 let controller: AbortController | null = null;
+import "/assets/loading_bg.webp";
 const router = useRouter();
-const page = ref(0);
-const p1Info = ref({
-  src: img,
-  name: "~",
-});
-const p2Info = ref({
-  src: img,
-  name: "~",
-});
 const time = ref(0);
 init();
 async function init() {
   try {
-    page.value = 0;
     const user = localStorage.getItem("user");
     const { data } = await axios.get(`/api/gameInfo?user=${user}`);
     if (data) {
-      p1Info.value = data.p1Info || {};
-      p2Info.value = data.p2Info || {};
       toGame();
     } else {
       start();
@@ -85,7 +47,6 @@ async function init() {
   } catch (error) {}
 }
 async function start() {
-  page.value = 1;
   setInterval(() => {
     time.value += 1;
   }, 1000);
@@ -99,7 +60,6 @@ async function start() {
       res(data);
     };
   });
-  console.log("tag", tag);
   if (Number(tag) === 1) {
     toGame();
   }
@@ -110,16 +70,7 @@ function cancel() {
 }
 
 async function toGame() {
-  page.value = 2;
-  await Promise.all([
-    loadAssets(),
-    new Promise<void>((res_) => {
-      setTimeout(() => {
-        res_();
-      }, 2000);
-    }),
-  ]);
-  router.push(`/game`);
+  router.push("/load");
 }
 
 function formatTime(seconds: number) {

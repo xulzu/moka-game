@@ -23,7 +23,6 @@ export class Card extends Container {
   cardData: CardData;
   draggle: boolean = true; // 是否可以拖动
   moveCard?: Container;
-  detailCard?: Container;
   txtContainer?: Container;
   numContainer?: Container;
   detailTimer?: any;
@@ -262,29 +261,24 @@ export class Card extends Container {
   }
 
   showDetail() {
+    this.romveDetailStep = 0;
     const detail = new Card(0, 0, this.cardData);
     detail.pivot.set(0, 0);
     detail.draggle = false;
-
     const w = 190;
     detail.setSize(w, w * (Card.height / Card.width));
     const vw = GameManager.getInstance().app?.screen.width || 0;
-    const vh = GameManager.getInstance().app?.screen.height || 0;
     detail.x = (vw - w) / 2;
     detail.y = 130;
 
-    GameManager.getInstance().app?.stage.addChild(detail);
-    this.detailCard = detail;
+    GameManager.getInstance().cardDetailZone.addChild(detail);
   }
   clearDetail() {
     clearTimeout(this.detailTimer);
-    if (!this.detailCard) return;
     if (this.romveDetailStep === 0) {
       this.romveDetailStep = 1;
       return;
     }
-    GameManager.getInstance().app?.stage.removeChild(this.detailCard!);
-    this.detailCard?.destroy();
-    this.detailCard = undefined;
+    GameManager.getInstance().cardDetailZone.removeChildren();
   }
 }

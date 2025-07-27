@@ -10,6 +10,7 @@ import cards from "./cards.json";
 import { Connect } from "./Connect";
 import EventEmitter from "events";
 import type { GameZoom } from "./GameZoom";
+import { DataStore } from "./sqlite";
 
 export class Player {
   id: string;
@@ -26,6 +27,7 @@ export class Player {
   machine: boolean = false; //是否是AI
   timeoutNum = 0; //烧绳子多少次
   firstConnect = true;
+  score = 0;
 
   attackNumOneTurn: number = 0; //本回合打出的攻击卡数量
   playLimitOneTurn: number = Infinity; //本回合打出的牌数量限制
@@ -40,7 +42,7 @@ export class Player {
   emitter = new EventEmitter();
   constructor(id: string) {
     this.id = id;
-    this.allCards = cloneDeep(
+    this.allCards = shuffle(
       cards
         .filter((item) => !item.off)
         .map((item, idx) => {
@@ -286,18 +288,46 @@ export class Player {
     }
   }
   tryGameOver() {
+    let winner: Player | undefined;
+    let failer: Player | undefined;
     if (this.health <= 0) {
-      this.connect?.gameOver("lose");
-      this.enemy?.connect?.gameOver("win");
+      winner = this.enemy!;
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
+      failer = this;
+    } else if (this.enemy && this.enemy.health <= 0) {
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
+      winner = this;
+      failer = this.enemy!;
+    }
+
+    if (winner && failer) {
+      this.room!.winner_id = winner.id;
+      const winNum = Player.getWinNum(winner.id);
+      if (failer.id === "roobot") {
+        winner.score = 2;
+      } else {
+        winner.score = winNum >= 3 ? 6 : 4;
+      }
+      failer.score = -2;
+      winner.connect?.gameOver("win", winner.score);
+      failer.connect?.gameOver("lose", failer.score);
       this.room?.gameOver();
-      this.connect?.close();
-      this.enemy?.connect?.close();
-    } else if ((this.enemy?.health || 0) <= 0) {
-      this.connect?.gameOver("win");
-      this.enemy?.connect?.gameOver("lose");
-      this.room?.gameOver();
-      this.connect?.close();
-      this.enemy?.connect?.close();
+      winner.connect?.close();
+      failer.connect?.close();
     }
   }
+  static getWinNum(id: string) {
+    const matchs = DataStore.getLast3Matches(id) || [];
+    const winNum = matchs.filter((item: any) => item.winner_id === id).length;
+    return winNum;
+  }
+}
+
+function shuffle(array: any) {
+  const result = cloneDeep(array);
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
 }

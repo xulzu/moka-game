@@ -13,6 +13,8 @@ export class Connect {
   initGame(data: {
     cards: CardData[];
     self: {
+      name: string;
+      avatar: string;
       health: number;
       handcards: number[];
       stackNum: number;
@@ -20,6 +22,8 @@ export class Connect {
       defenseCards: (number | null)[];
     };
     enemy: {
+      name: string;
+      avatar: string;
       id: string;
       machine: boolean;
       health: number;
@@ -125,11 +129,12 @@ export class Connect {
       })
     );
   }
-  gameOver(type: "win" | "lose") {
+  gameOver(type: "win" | "lose", score: number) {
     this.res.send(
       JSON.stringify({
         type: "gameOver",
         data: type,
+        score,
       })
     );
   }
