@@ -1,5 +1,5 @@
-import { Connect } from "./Connect";
-import { DataStore } from "./sqlite";
+import { Connect } from "./Connect.js";
+import { DataStore } from "./sqlite.js";
 export class Computer {
     constructor(id, game) {
         Object.defineProperty(this, "id", {

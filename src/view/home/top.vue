@@ -215,6 +215,16 @@ async function init() {
       ...list.value[selfIdx],
       rank: selfIdx,
     };
+  } else {
+    const { data } = await axios.get("/api/init", {
+      params: {
+        user,
+      },
+    });
+    self.value = {
+      ...data,
+      rank: 100,
+    };
   }
 }
 </script>

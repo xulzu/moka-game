@@ -16,7 +16,7 @@ export default defineConfig({
     host: "0.0.0.0",
     proxy: {
       "^/(api|sse)": {
-        target: "http://localhost:4004",
+        target: "http://localhost:51820",
         changeOrigin: true,
       },
     },

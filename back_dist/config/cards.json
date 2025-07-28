@@ -1,0 +1,324 @@
+[
+  {
+    "id": 0,
+    "type": "attack",
+    "name": "SQL注入",
+    "description": "造成4点伤害",
+    "attack": 4,
+    "bg": "sql_inject",
+    "tag1": "DIRECT_ONLY",
+    "tag2": "WEB_ATTACK",
+    "tag3": null,
+    "link": null,
+    "linkEffect": [],
+    "duration": 0,
+    "off": false
+  },
+  {
+    "id": 0,
+    "type": "attack",
+    "name": "SQL注入",
+    "description": "造成4点伤害",
+    "attack": 4,
+    "bg": "sql_inject",
+    "tag1": "DIRECT_ONLY",
+    "tag2": "WEB_ATTACK",
+    "tag3": null,
+    "link": null,
+    "linkEffect": [],
+    "duration": 0,
+    "off": false
+  },
+  {
+    "id": 1,
+    "type": "attack",
+    "name": "提权攻击",
+    "description": "上一张打出[web攻击]时伤害+3",
+    "attack": 3,
+    "bg": "up_root",
+    "tag1": "DIRECT_ONLY",
+    "tag2": "SYSTEM_EXPLOIT",
+    "tag3": "CHAINABLE",
+    "link": "WEB_ATTACK",
+    "linkEffect": [
+      {
+        "name": "a_1",
+        "args": {
+          "n": 3
+        }
+      }
+    ],
+    "duration": 0,
+    "off": false
+  },
+  {
+    "id": 0,
+    "type": "attack",
+    "name": "钓鱼邮件",
+    "description": "造成2点伤害",
+    "attack": 2,
+    "bg": "dyyj",
+    "tag1": "DIRECT_ONLY",
+    "tag2": "SOCIAL_ENGINEERING",
+    "tag3": null,
+    "link": null,
+    "linkEffect": [],
+    "duration": 0,
+    "off": false
+  },
+  {
+    "id": 0,
+    "type": "attack",
+    "name": "钓鱼邮件",
+    "description": "造成2点伤害",
+    "attack": 2,
+    "bg": "dyyj",
+    "tag1": "DIRECT_ONLY",
+    "tag2": "SOCIAL_ENGINEERING",
+    "tag3": null,
+    "link": null,
+    "linkEffect": [],
+    "duration": 0,
+    "off": false
+  },
+  {
+    "id": 0,
+    "type": "attack",
+    "name": "钓鱼邮件",
+    "description": "造成2点伤害",
+    "attack": 2,
+    "bg": "dyyj",
+    "tag1": "DIRECT_ONLY",
+    "tag2": "SOCIAL_ENGINEERING",
+    "tag3": null,
+    "link": null,
+    "linkEffect": [],
+    "duration": 0,
+    "off": false
+  },
+  {
+    "id": 0,
+    "type": "attack",
+    "name": "弱口令攻击",
+    "description": "造成3点伤害",
+    "attack": 3,
+    "bg": "ruokouling",
+    "tag1": "DIRECT_ONLY",
+    "tag2": "SYSTEM_EXPLOIT",
+    "tag3": null,
+    "link": null,
+    "linkEffect": [],
+    "duration": 0,
+    "off": false
+  },
+  {
+    "id": 0,
+    "type": "attack",
+    "name": "弱口令攻击",
+    "description": "造成3点伤害",
+    "attack": 3,
+    "bg": "ruokouling",
+    "tag1": "DIRECT_ONLY",
+    "tag2": "SYSTEM_EXPLOIT",
+    "tag3": null,
+    "link": null,
+    "linkEffect": [],
+    "duration": 0,
+    "off": false
+  },
+  {
+    "id": 0,
+    "type": "attack",
+    "name": "命令注入",
+    "description": "造成5点伤害",
+    "attack": 5,
+    "bg": "mlzy",
+    "tag1": "DIRECT_ONLY",
+    "tag2": "SYSTEM_EXPLOIT",
+    "tag3": null,
+    "link": null,
+    "linkEffect": [],
+    "duration": 0,
+    "off": false
+  },
+  {
+    "id": 0,
+    "type": "attack",
+    "name": "XSS跨站脚本",
+    "description": "造成5点伤害",
+    "attack": 5,
+    "bg": "xss",
+    "tag1": "DIRECT_ONLY",
+    "tag2": "WEB_ATTACK",
+    "tag3": null,
+    "link": null,
+    "linkEffect": [],
+    "duration": 0,
+    "off": false
+  },
+
+  {
+    "id": 0,
+    "type": "attack",
+    "name": "恶意广告",
+    "description": "上一张打出[社工]时攻击+3",
+    "attack": 2,
+    "bg": "eygg",
+    "tag1": "DIRECT_ONLY",
+    "tag2": "WEB_ATTACK",
+    "tag3": "CHAINABLE",
+    "link": "SOCIAL_ENGINEERING",
+    "linkEffect": [
+      {
+        "name": "a_1",
+        "args": {
+          "n": 3
+        }
+      }
+    ],
+    "duration": 0,
+    "off": false
+  },
+
+  {
+    "id": 2,
+    "type": "defense",
+    "name": "防火墙",
+    "bg": "waf",
+    "description": "抵挡2点伤害，抵挡[Web攻击]额外2点伤害",
+    "defense": 2,
+    "health": 0,
+    "buffTagert": "WEB_ATTACK",
+    "buffEffect": [
+      {
+        "name": "d_1",
+        "args": {
+          "n": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "type": "defense",
+    "name": "安全培训",
+    "bg": "px1",
+    "description": "抵挡2点伤害，抵挡[社工]额外2点伤害",
+    "defense": 2,
+    "health": 0,
+    "buffTagert": "SOCIAL_ENGINEERING",
+    "buffEffect": [
+      {
+        "name": "d_1",
+        "args": {
+          "n": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "type": "defense",
+    "name": "安全引擎",
+    "bg": "aq1",
+    "description": "抵挡2点伤害，抵挡[系统漏洞]额外2点伤害",
+    "defense": 2,
+    "health": 0,
+    "buffTagert": "SYSTEM_EXPLOIT",
+    "buffEffect": [
+      {
+        "name": "d_1",
+        "args": {
+          "n": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "type": "defense",
+    "name": "安全检查",
+    "bg": "aqjc",
+    "description": "抵挡任意攻击2点伤害",
+    "defense": 2,
+    "health": 0,
+    "buffTagert": null,
+    "buffEffect": []
+  },
+
+  {
+    "id": 3,
+    "type": "special",
+    "name": "系统修复",
+    "description": "恢复2点生命值",
+    "bg": "ldxf",
+    "effect": [
+      {
+        "name": "s_1",
+        "args": {
+          "n": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "type": "special",
+    "name": "威胁情报分析",
+    "description": "自己抽两张牌",
+    "bg": "qbfx",
+    "effect": [
+      {
+        "name": "s_2",
+        "args": {
+          "n": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "type": "special",
+    "name": "攻击脚本优化",
+    "description": "本回合多出一张攻击卡",
+    "bg": "bdsj",
+    "effect": [
+      {
+        "name": "s_3",
+        "args": {
+          "n": 1
+        }
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "type": "special",
+    "name": "防火墙升级",
+    "description": "手牌防御卡增加2点防御",
+    "bg": "waf_update",
+    "effect": [
+      {
+        "name": "s_5",
+        "args": {
+          "n": 2
+        }
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "type": "special",
+    "name": "拔网线",
+    "description": "下回合自己收到的伤害减少2",
+    "bg": "dw",
+    "effect": [
+      {
+        "name": "s_4",
+        "args": {
+          "n": 2
+        }
+      }
+    ]
+  }
+]

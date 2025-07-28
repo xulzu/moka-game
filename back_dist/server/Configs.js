@@ -1,7 +1,12 @@
 import fs from "fs";
-const cards = JSON.parse(fs.readFileSync(new URL("./cards.json", import.meta.url), "utf-8"));
+const cards = JSON.parse(fs.readFileSync("./config/cards.json", {
+    encoding: "utf-8",
+}));
+const listen = JSON.parse(fs.readFileSync("./config/listen.json", {
+    encoding: "utf-8",
+}));
 export const AllCards = cards;
-export const PORT = 4004;
+export const PORT = listen.port || 4004;
 export const Config = {
     AllCards,
     PORT,

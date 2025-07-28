@@ -22,6 +22,7 @@ export class GameZoom extends EventEmitter {
     this.player1.enemy = player2;
     this.player2.enemy = player1;
     this.startTimer = setTimeout(() => {
+      console.log("游戏始终未开始，自动结束");
       this.gameOver();
     }, 30 * 1000);
   }
@@ -67,7 +68,6 @@ export class GameZoom extends EventEmitter {
       timeIdx--;
       player.connect?.waitDefenseCard(false, timeIdx, id);
       player_t.connect?.waitDefenseCard(true, timeIdx, id);
-      console.log(player.id, "等待对方防御");
       if (timeIdx <= 0) {
         clearInterval(this.waitTimer);
         this.waitTimer = undefined;
@@ -119,7 +119,6 @@ export class GameZoom extends EventEmitter {
     // 开始新回合，并设置超时计时
     const player = this.currentPlayer === 0 ? this.player1 : this.player2;
     const player_t = this.currentPlayer === 0 ? this.player2 : this.player1;
-    console.log(this.currentPlayer, player.id, "回合开始");
     player.turnStart();
     const timeout = 30;
     let timeIdx = 0;

@@ -168,7 +168,6 @@ export class Player {
   private handleAttackCard(card: AttackCardData) {
     this.curPlayCardId = card.id;
     card._tempAttack = card._tempAttack || 0;
-    console.log("攻击", card.name, card.attack, card._tempAttack || 0);
     const danger = card.attack + Number(card._tempAttack);
 
     {
@@ -218,7 +217,6 @@ export class Player {
           for (const e of hand.buffEffect || []) {
             if (e.name === "d_1") {
               const n = (e.args?.n as number) || 0;
-              console.log("防御增加", n);
               hand._tempDefense = hand._tempDefense || 0;
               hand._tempDefense += n;
               this.enemy?.connect?.defenseUpdate(hand.id, hand._tempDefense!);

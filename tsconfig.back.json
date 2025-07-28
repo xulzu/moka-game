@@ -17,5 +17,5 @@
     "strict": false
   },
 
-  "include": ["src/baseType/**/*.ts", "src/server/**/*.ts"]
+  "include": ["src/server/**/*.ts"]
 }

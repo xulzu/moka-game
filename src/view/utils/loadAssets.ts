@@ -130,5 +130,9 @@ export async function loadAssets() {
       alias: "p2turn",
       src: "/assets/p2turn.webp",
     },
+    {
+      alias: "mlzy",
+      src: "/cards/mlzy.webp",
+    },
   ]);
 }

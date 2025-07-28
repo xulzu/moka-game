@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const targetDir = process.argv[2] || "./back_dist";
+const targetDir = process.argv[2] || "./back_dist/server";
 
 const extsToSkip = [".js", ".json", ".ts"];
 

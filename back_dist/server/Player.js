@@ -1,7 +1,7 @@
 import { cloneDeep } from "lodash-es";
 import EventEmitter from "events";
-import { DataStore } from "./sqlite";
-import { Config } from "./Configs";
+import { DataStore } from "./sqlite.js";
+import { Config } from "./Configs.js";
 export class Player {
     constructor(id) {
         Object.defineProperty(this, "id", {
@@ -269,7 +269,6 @@ export class Player {
     handleAttackCard(card) {
         this.curPlayCardId = card.id;
         card._tempAttack = card._tempAttack || 0;
-        console.log("攻击", card.name, card.attack, card._tempAttack || 0);
         const danger = card.attack + Number(card._tempAttack);
         {
             //结算连击combo
@@ -314,7 +313,6 @@ export class Player {
                     for (const e of hand.buffEffect || []) {
                         if (e.name === "d_1") {
                             const n = e.args?.n || 0;
-                            console.log("防御增加", n);
                             hand._tempDefense = hand._tempDefense || 0;
                             hand._tempDefense += n;
                             this.enemy?.connect?.defenseUpdate(hand.id, hand._tempDefense);

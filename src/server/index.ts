@@ -8,7 +8,7 @@ import { Computer } from "./Computer";
 import { Player } from "./Player";
 import { DataStore } from "./sqlite";
 import { Config } from "./Configs";
-
+import staticServe from "koa-static";
 class Game {
   queue: { user: string; resolve: PendingResolve }[] = [];
   private allZoom: Record<string, Player> = {};
@@ -38,7 +38,6 @@ class Game {
           const pd_id = Computer.getId();
           const game = this.createGame(pd_id, user);
           new Computer(pd_id, game);
-          game.gameStart();
           resolve_(1);
         }
       }, 5 * 1000);
@@ -96,13 +95,24 @@ class Game {
 const app = new Koa();
 const router = new Router();
 const game = new Game();
+app.use(async (ctx, next) => {
+  try {
+    await next(); // 执行下一个中间件或路由
+  } catch (err) {
+    console.error("Koa caught error:", err);
+    ctx.status = err.status || 500;
+    ctx.body = {
+      message: err.message || "程序出错",
+    };
+  }
+});
 app.use((ctx, next) => {
   ctx.user = ctx.cookies.get("user") || "";
   return next();
 });
+app.use(staticServe("static"));
 router.get("/api/init", (ctx) => {
   const userid = ctx.query.user as string;
-  console.log(userid, "-");
   ctx.cookies.set("user", userid);
   const user = DataStore.getUser(userid);
   if (!user) {
@@ -113,13 +123,14 @@ router.get("/api/init", (ctx) => {
       score: 0,
     });
   }
-  ctx.status = 200;
+  const self = DataStore.getUser(userid);
+  ctx.body = self;
 });
 router.get("/api/list", (ctx) => {
-  const userId = ctx.user;
   const list = DataStore.getTopUsers();
   ctx.body = list;
 });
+
 router.get("/api/allCards", (ctx) => {
   ctx.body = Config.AllCards;
 });
@@ -136,7 +147,14 @@ router.get("/sse/pending", async (ctx) => {
     game.cancel(user);
     ctx.res.end();
   });
-  const user = ctx.user;
+  const user = ctx.user || ctx.query.user;
+  const match = user && DataStore.getUser(user);
+  if (!match) {
+    ctx.body = "用户不存在" + user;
+    ctx.status = 400;
+    ctx.res.end();
+    return;
+  }
   const ok = await game.pending(user);
   ctx.res.write(`data:${ok}\n\n`);
 });
@@ -146,7 +164,7 @@ router.get("/api/cancel", (ctx) => {
   ctx.body = "ok";
 });
 router.get("/sse/connect", async (ctx) => {
-  const user = ctx.user;
+  const user = ctx.user || ctx.query.user;
   const player = game.getPlayer(user);
   ctx.set({
     "Content-Type": "text/event-stream",
@@ -271,32 +289,31 @@ router.get("/api/gameInfo", (ctx) => {
     },
   };
 });
-router.get("/api/debug", (ctx) => {
-  const user = ctx.user;
-  const player = game.getPlayer(user);
-  if (!player) {
-    ctx.status = 400;
-    ctx.body = "对局不存在";
-    return;
-  }
-  const room = player.room!;
-  const player_t = player.enemy;
-  const currentPlayer = room.currentPlayer === 0 ? room.player1 : room.player2;
-  const res = {
-    user: player.id,
-    self: currentPlayer.id === player.id,
-    enemy: player_t?.enemy?.id,
-    currentPlayer: room.currentPlayer,
-    p1Hand: room.player1.handCards?.map((item) => item.name),
-    p2Hand: room.player2.handCards?.map((item) => item.name),
-    p1Danger: room.player1.danger,
-    p1Id: room.player1.id,
-    p2Danger: room.player2.danger,
-    p2Id: room.player2.id,
-  };
-  console.log(res, "res");
-  ctx.body = res;
-});
+// router.get("/api/debug", (ctx) => {
+//   const user = ctx.user;
+//   const player = game.getPlayer(user);
+//   if (!player) {
+//     ctx.status = 400;
+//     ctx.body = "对局不存在";
+//     return;
+//   }
+//   const room = player.room!;
+//   const player_t = player.enemy;
+//   const currentPlayer = room.currentPlayer === 0 ? room.player1 : room.player2;
+//   const res = {
+//     user: player.id,
+//     self: currentPlayer.id === player.id,
+//     enemy: player_t?.enemy?.id,
+//     currentPlayer: room.currentPlayer,
+//     p1Hand: room.player1.handCards?.map((item) => item.name),
+//     p2Hand: room.player2.handCards?.map((item) => item.name),
+//     p1Danger: room.player1.danger,
+//     p1Id: room.player1.id,
+//     p2Danger: room.player2.danger,
+//     p2Id: room.player2.id,
+//   };
+//   ctx.body = res;
+// });
 router.get("/api/lose", (ctx) => {
   const user = ctx.user;
   const player = game.getPlayer(user);
@@ -308,6 +325,19 @@ router.get("/api/lose", (ctx) => {
   player.health = 0;
   player.tryGameOver();
   ctx.status = 200;
+});
+router.get("/api/test", (ctx) => {
+  const user = ctx.user;
+  const player = game.getPlayer(user);
+  if (!player) {
+    ctx.status = 400;
+    ctx.body = "对局不存在";
+    return;
+  }
+  ctx.body = {
+    hands: player.handCards,
+    danger: player.danger,
+  };
 });
 app.use(router.routes());
 app.use(router.allowedMethods());
