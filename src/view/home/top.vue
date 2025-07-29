@@ -1,6 +1,8 @@
 <template>
   <div class="z-0 bg absolute top-0 left-0 h-[100vh] w-[100vw]"></div>
-  <div class="z-10 relative bg-[#1e1d6685] w-[100vw] min-h-[100vh] p-[5px]">
+  <div
+    class="z-10 relative bg-[#1e1d6685] w-[100vw] h-[100vh] p-[5px] overflow-auto hide-scrollbar"
+  >
     <div class="mb-[20px] pt-[20px] relative">
       <span
         @click="$router.push('/')"
@@ -240,5 +242,14 @@ async function init() {
 
 .selfShadow {
   box-shadow: 0px -5px 54px #0a0a0ac7;
+}
+
+.hide-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Opera */
 }
 </style>

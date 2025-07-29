@@ -251,6 +251,7 @@ export class GameManager {
     // 如果只有一张牌，则不进行计算
     for (let i = 0; i < length; i++) {
       const child = this.p1HandZone.children[i];
+      child.alpha = 1;
       child.x = x;
       child.y = Card.height;
       x += p1Gap;

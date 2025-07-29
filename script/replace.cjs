@@ -1,3 +1,5 @@
+// 将所有js文件中的import路径替换为.js后缀
+
 const fs = require("fs");
 const path = require("path");
 
