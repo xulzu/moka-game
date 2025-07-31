@@ -28,6 +28,7 @@ export class Card extends Container {
   detailTimer?: any;
   playDistance: number = 0;
   romveDetailStep = 0;
+  preClickTime = 0;
   constructor(x: number, y: number, cardData?: CardData, app?: Application) {
     super();
     this.id = id++;
@@ -37,6 +38,7 @@ export class Card extends Container {
       const bgt = Assets.get(cardData.bg);
       if (bgt) {
         const bg = new Sprite(bgt);
+        bg.texture.source.scaleMode = "nearest";
         bg.setSize(Card.width, Card.height);
         this.addChild(bg);
       } else {
@@ -57,6 +59,7 @@ export class Card extends Container {
             fontSize: 11,
             fontFamily: "SimSun",
           },
+          resolution: 4,
         });
         nameTxt.x = 10;
         nameTxt.y = 5;
@@ -77,6 +80,16 @@ export class Card extends Container {
         txtContainer.y = 1;
         numContainer.addChild(txtContainer);
         this.addChild(numContainer);
+
+        if (cardData.type === "special") {
+          //添加策略卡的星星
+          const starSprite = new Sprite(Assets.get("star"));
+          starSprite.setSize(18, 18);
+          starSprite.x = (numContainer.width - starSprite.width) / 2;
+          starSprite.y = (numContainer.height - starSprite.height) / 2;
+          numContainer.addChild(starSprite);
+        }
+
         this.updateNum();
       }
       {
@@ -98,6 +111,7 @@ export class Card extends Container {
               breakWords: true,
               fontFamily: "SimSun",
             },
+            resolution: 4,
           });
           txt.y = -12;
           descContainer.addChild(txt);
@@ -113,6 +127,7 @@ export class Card extends Container {
               breakWords: true,
               fontFamily: "SimSun",
             },
+            resolution: 4,
           });
           descContainer.addChild(txt);
         }
@@ -161,6 +176,7 @@ export class Card extends Container {
   // 更新数值
   updateNum() {
     if (this.txtContainer) {
+      if (this.cardData.type === "special") return;
       this.txtContainer?.removeChildren();
       let num = "~";
       let color = "#ffffff";
@@ -186,6 +202,7 @@ export class Card extends Container {
           fontSize: 19,
           fontWeight: "bold",
         },
+        resolution: 4,
       });
       this.txtContainer?.addChild(txt);
       this.txtContainer.x =
@@ -196,6 +213,13 @@ export class Card extends Container {
   }
   dragStart(event: FederatedPointerEvent) {
     if (!this.draggle) return;
+    const time = Date.now();
+    if (time - this.preClickTime <= 250) {
+      // 双击直接打出
+      GameManager.getInstance().playCard(this);
+      return;
+    }
+    this.preClickTime = time;
     this.clearDetail();
     this.detailTimer = setTimeout(() => {
       this.showDetail();
@@ -237,14 +261,14 @@ export class Card extends Container {
     newCard.emit("pointermove", event);
   }
 
-  dragEnd(e: FederatedPointerEvent) {
+  dragEnd() {
     if (!this.isDragging) return;
     // 显示/隐藏打出区域
     const gameManager = GameManager.getInstance();
     gameManager.activeZone.hide();
     this.isDragging = false;
     if (this.lastDragPosGlobalY <= this.playDistance) {
-      gameManager.playCard(this, e);
+      gameManager.playCard(this);
     }
     if (!this.destroyed) {
       this.alpha = 1;

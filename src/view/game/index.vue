@@ -110,39 +110,26 @@ import {
   Text,
 } from "pixi.js";
 import * as PIXI from "pixi.js";
-import { initDevtools } from "@pixi/devtools";
-import { DefenseCard } from "./DefenseCard";
-import { Card } from "./Card";
-import { Health } from "./Health";
 import { GameManager } from "./GameManager";
-import { gsap } from "gsap";
-import { PixiPlugin } from "gsap/PixiPlugin";
-import { onMounted, ref, useTemplateRef } from "vue";
+import { onBeforeUnmount, onMounted, ref, useTemplateRef } from "vue";
 import type { CardData } from "../../baseType/base";
 import { showToast } from "vant";
 import axios from "axios";
 import { loadAssets } from "../utils/loadAssets";
 import Lose from "./lose.vue";
+
 const loseRef = useTemplateRef("loseRef");
 const selfTurn = ref(true);
 const time = ref(-1);
-
-const selfWait = ref(false);
-const timeWait = ref(0);
 const win = ref("");
 const score = ref(0);
 const coin = ref(-1);
 
 onMounted(() => {
-  gsap.registerPlugin(PixiPlugin);
-  PixiPlugin.registerPIXI(PIXI);
-
   (async () => {
     await loadAssets();
     // Create a new application
     const app = new Application();
-    initDevtools({ app });
-
     // Initialize the application
     await app.init({
       background: "#1099bb",
@@ -152,6 +139,7 @@ onMounted(() => {
     });
 
     const bgSprite = new Sprite(Assets.get("bg"));
+    bgSprite.texture.source.scaleMode = "nearest";
     bgSprite.width = app.screen.width;
     bgSprite.height = app.screen.height;
     app.stage.addChildAt(bgSprite, 0);
@@ -160,6 +148,7 @@ onMounted(() => {
     const gameManager = new GameManager(app);
 
     const setting = new Sprite(await Assets.load("/assets/set.webp"));
+    setting.texture.source.scaleMode = "nearest";
     setting.width = 30;
     setting.height = 30;
     setting.x = 15;
@@ -279,12 +268,13 @@ onMounted(() => {
   })();
 });
 
-function skipDefenseCard() {
-  fetch("/api/skipDefenseCard");
-}
+onBeforeUnmount(() => {
+  GameManager.getInstance().app?.destroy();
+  GameManager.instance = null;
+});
 
 function debug() {
-  axios.get("/api/debug");
+  // axios.get("/api/debug");
 }
 
 function endTurn() {

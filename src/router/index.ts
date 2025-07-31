@@ -7,6 +7,7 @@ import Cards from "../view/home/cards.vue";
 import Top from "../view/home/top.vue";
 import loadGame from "../view/home/loadGame.vue";
 import tips from "../view/home/tips.vue";
+import dayTask from "../view/home/dayTask.vue";
 const routes = [
   { path: "/", component: HomeView },
   { path: "/game", component: GameView },
@@ -29,6 +30,10 @@ const routes = [
   {
     path: "/tips",
     component: tips,
+  },
+  {
+    path: "/dayTask",
+    component: dayTask,
   },
 ];
 

@@ -1,3 +1,4 @@
 {
-  "port": 51820
+  "port": 51820,
+  "auth": "http://security.caifudaren.com.cn"
 }

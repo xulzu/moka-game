@@ -25,7 +25,7 @@ import { WaitDefenseZone } from "./WaitDefenseZone";
 import { PlayAnimation } from "./PlayAnimation";
 
 export class GameManager {
-  private static instance: GameManager;
+  static instance: GameManager;
 
   // 游戏状态
   private currentPlayer: "player1" | "player2" = "player1";
@@ -57,9 +57,7 @@ export class GameManager {
     this.app = app;
     const vh100 = app.screen.height;
     const vw100 = app.screen.width;
-    if (!GameManager.instance) {
-      GameManager.instance = this;
-    }
+    GameManager.instance = this;
     {
       //打出区
       this.activeZone = new ActiveZone();
@@ -148,7 +146,7 @@ export class GameManager {
     this.handCards.push(...cards);
   }
 
-  async playCard(card: Card, event: FederatedPointerEvent) {
+  async playCard(card: Card) {
     console.log(`打出卡片: ${card.cardData.name} (${card.cardData.type})`);
     fetch("/api/play?id=" + card.cardData.id + "&user=230250");
   }

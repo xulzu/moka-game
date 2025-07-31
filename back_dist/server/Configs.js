@@ -7,7 +7,9 @@ const listen = JSON.parse(fs.readFileSync("./config/listen.json", {
 }));
 export const AllCards = cards;
 export const PORT = listen.port || 4004;
+export const AUTH_URL = listen.auth || "";
 export const Config = {
     AllCards,
     PORT,
+    AUTH_URL,
 };

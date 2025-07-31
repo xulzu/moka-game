@@ -27,6 +27,13 @@
       width="90"
       class="shdaow_ absolute top-[calc(40vh+120px)] right-[16vw]"
     />
+    <div
+      @click="$router.push('/dayTask')"
+      class="absolute top-[40vh] right-[10px]"
+    >
+      <img src="/assets/qd.webp" alt="" class="h-[34px]" />
+      <div class="text-white text-[12px] translate-x-[3px]">签到</div>
+    </div>
   </div>
 </template>
 <script lang="ts" setup>

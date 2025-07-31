@@ -134,5 +134,9 @@ export async function loadAssets() {
       alias: "mlzy",
       src: "/cards/mlzy.webp",
     },
+    {
+      alias: "star",
+      src: "/assets/star.webp",
+    },
   ]);
 }

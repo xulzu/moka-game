@@ -208,25 +208,22 @@ const top3 = computed(() => {
 });
 init();
 async function init() {
-  const user = localStorage.getItem("user");
+  const { data: selfData } = await axios.get("/api/init");
+  self.value = {
+    ...selfData,
+    rank: 100,
+  };
   const { data } = await axios.get("/api/list");
   list.value = data || [];
-  const selfIdx = list.value.findIndex((item: any) => item.userid == user);
+  const selfIdx = list.value.findIndex(
+    (item: any) => item.userid == selfData.userid
+  );
   if (selfIdx !== -1) {
     self.value = {
       ...list.value[selfIdx],
       rank: selfIdx,
     };
   } else {
-    const { data } = await axios.get("/api/init", {
-      params: {
-        user,
-      },
-    });
-    self.value = {
-      ...data,
-      rank: 100,
-    };
   }
 }
 </script>

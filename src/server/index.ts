@@ -9,6 +9,10 @@ import { Player } from "./Player";
 import { DataStore } from "./sqlite";
 import { Config } from "./Configs";
 import staticServe from "koa-static";
+import NodeCache from "node-cache";
+import dayjs from "dayjs";
+const GlobalCache = new NodeCache({ stdTTL: 60, checkperiod: 120 });
+
 class Game {
   queue: { user: string; resolve: PendingResolve }[] = [];
   private allZoom: Record<string, Player> = {};
@@ -26,7 +30,7 @@ class Game {
     let timer: any = void 0;
     if (this.queue.length) {
       const { user: p2, resolve: resolve_2 } = this.queue.shift()!;
-      const game = this.createGame(user, p2);
+      this.createGame(user, p2);
       resolve_2?.(1);
       resolve_!(1);
     } else {
@@ -40,7 +44,7 @@ class Game {
           new Computer(pd_id, game);
           resolve_(1);
         }
-      }, 5 * 1000);
+      }, 10 * 1000);
       this.cancelFn[user] = () => {
         clearTimeout(timer);
         resolve_(0);
@@ -95,6 +99,8 @@ class Game {
 const app = new Koa();
 const router = new Router();
 const game = new Game();
+
+//错误处理中间件
 app.use(async (ctx, next) => {
   try {
     await next(); // 执行下一个中间件或路由
@@ -106,23 +112,54 @@ app.use(async (ctx, next) => {
     };
   }
 });
-app.use((ctx, next) => {
-  ctx.user = ctx.cookies.get("user") || "";
+
+//认证jwt中间件
+app.use(async (ctx, next) => {
+  console.log(ctx.path);
+  const jwt = ctx.cookies.get("bearer") || "";
+  if (!jwt) {
+    // throw new Error("请先登录");
+  }
+  let user = "";
+  if (GlobalCache.has(jwt)) {
+    user = GlobalCache.get(jwt);
+  } else {
+    // const { data } = await axios
+    //   .get("/api/auth/valid", {
+    //     baseURL: Config.AUTH_URL,
+    //     params: {
+    //       bearer: jwt,
+    //     },
+    //   })
+    //   .catch(() => {
+    //     throw new Error("认证出错");
+    //   });
+    // const userid = data?.jobNumber;
+    // const username = data?.name;
+    const userid = "230250";
+    const username = "张三";
+    if (!userid || !username) {
+      throw new Error("认证出错");
+    }
+    const userInfo = DataStore.getUser(userid);
+    if (!userInfo) {
+      DataStore.addUser({
+        userid,
+        name: username,
+        avatar: "",
+        score: 0,
+      });
+    }
+    user = userid;
+    //jwt 和 用户id 缓存10分钟，过期后重新认证，不然每次都http去其他系统认证耗时间
+    GlobalCache.set(jwt, userid, 10 * 60);
+  }
+  ctx.user = user;
   return next();
 });
 app.use(staticServe("static"));
 router.get("/api/init", (ctx) => {
-  const userid = ctx.query.user as string;
-  ctx.cookies.set("user", userid);
-  const user = DataStore.getUser(userid);
-  if (!user) {
-    DataStore.addUser({
-      userid: String(userid),
-      name: String(userid),
-      avatar: "/assets/user_ico.webp",
-      score: 0,
-    });
-  }
+  const userid = ctx.user as string;
   const self = DataStore.getUser(userid);
   ctx.body = self;
 });
@@ -289,31 +326,6 @@ router.get("/api/gameInfo", (ctx) => {
     },
   };
 });
-// router.get("/api/debug", (ctx) => {
-//   const user = ctx.user;
-//   const player = game.getPlayer(user);
-//   if (!player) {
-//     ctx.status = 400;
-//     ctx.body = "对局不存在";
-//     return;
-//   }
-//   const room = player.room!;
-//   const player_t = player.enemy;
-//   const currentPlayer = room.currentPlayer === 0 ? room.player1 : room.player2;
-//   const res = {
-//     user: player.id,
-//     self: currentPlayer.id === player.id,
-//     enemy: player_t?.enemy?.id,
-//     currentPlayer: room.currentPlayer,
-//     p1Hand: room.player1.handCards?.map((item) => item.name),
-//     p2Hand: room.player2.handCards?.map((item) => item.name),
-//     p1Danger: room.player1.danger,
-//     p1Id: room.player1.id,
-//     p2Danger: room.player2.danger,
-//     p2Id: room.player2.id,
-//   };
-//   ctx.body = res;
-// });
 router.get("/api/lose", (ctx) => {
   const user = ctx.user;
   const player = game.getPlayer(user);
@@ -338,6 +350,36 @@ router.get("/api/test", (ctx) => {
     hands: player.handCards,
     danger: player.danger,
   };
+});
+router.get("/api/sigins", (ctx) => {
+  const user = ctx.user;
+  const today = dayjs().format("YYYY-MM-DD");
+  const data = DataStore.getSigins(user)?.map((item) => item.date) || [];
+  console.log(data);
+  const cfg = Config.SIGN_START_DAY || [];
+  const arr = new Array(cfg.length).fill(0);
+  for (let i = 0; i < arr.length; i++) {
+    const has = data.includes(cfg[i]);
+    if (has) {
+      arr[i] = 1;
+    } else {
+      arr[i] = cfg[i] < today ? -1 : 0;
+    }
+  }
+  ctx.body = arr;
+});
+router.get("/api/signin", (ctx) => {
+  const user = ctx.user;
+  const cur_date = dayjs().format("YYYY-MM-DD");
+  const ready = DataStore.getSignin(user, cur_date);
+  if (ready) {
+    ctx.status = 400;
+    ctx.body = "今天已经签到过了";
+    return;
+  }
+  DataStore.addSignin(user, cur_date);
+  DataStore.updateUserScore(user, 5);
+  ctx.body = "ok";
 });
 app.use(router.routes());
 app.use(router.allowedMethods());

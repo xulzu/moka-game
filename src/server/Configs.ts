@@ -12,7 +12,11 @@ const listen = JSON.parse(
 );
 export const AllCards = cards as CardData[];
 export const PORT = listen.port || 4004;
+export const AUTH_URL = listen.auth || "";
+const SIGN_START_DAY = listen.sign_start_day as string[];
 export const Config = {
   AllCards,
   PORT,
+  AUTH_URL,
+  SIGN_START_DAY,
 };
