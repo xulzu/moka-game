@@ -1,7 +1,6 @@
-import Database from "better-sqlite3";
+import { DatabaseSync } from "node:sqlite";
+const db = new DatabaseSync("./gamedb.sqlite");
 import { Config } from "./Configs";
-import dayjs from "dayjs";
-const db = new Database("./gamedb.sqlite");
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (

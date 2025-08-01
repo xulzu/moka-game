@@ -302,7 +302,7 @@ export class Player {
       if (failer.id === "roobot") {
         winner.score = 2;
       } else {
-        winner.score = winNum >= 3 ? 6 : 4;
+        winner.score = winNum >= 2 ? 6 : 4;
       }
       failer.score = -2;
       winner.connect?.gameOver("win", winner.score);

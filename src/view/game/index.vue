@@ -38,7 +38,7 @@
 
     <div
       v-if="win"
-      @click="$router.push('/')"
+      @click="overGame"
       class="fixed left-0 top-0 h-[100vh] w-[100vw] z-10 bg-[#060606c9]"
     >
       <img
@@ -117,11 +117,13 @@ import { showToast } from "vant";
 import axios from "axios";
 import { loadAssets } from "../utils/loadAssets";
 import Lose from "./lose.vue";
+import { useRouter } from "vue-router";
 
 const loseRef = useTemplateRef("loseRef");
 const selfTurn = ref(true);
 const time = ref(-1);
 const win = ref("");
+const canBack = ref(false);
 const score = ref(0);
 const coin = ref(-1);
 
@@ -203,11 +205,11 @@ onMounted(() => {
         {
           //初始化头像
           gameManager.healthZoneP1.updateAvatar(
-            initData?.self?.avatar || "/assets/ico1.webp"
+            initData?.self?.avatar || "/assets/user_ico.webp"
           );
           if (initData.enemy?.id !== "roobot") {
             gameManager.healthZoneP2.updateAvatar(
-              initData?.enemy?.avatar || "/assets/ico1.webp"
+              initData?.enemy?.avatar || "/assets/user_ico.webp"
             );
           }
         }
@@ -260,6 +262,9 @@ onMounted(() => {
         win.value = data.data;
         score.value = data.score;
         sse.close();
+        setTimeout(() => {
+          canBack.value = true;
+        }, 2000);
       }
     };
     sse.onerror = (event) => {
@@ -279,6 +284,11 @@ function debug() {
 
 function endTurn() {
   GameManager.getInstance().turnIdxZone.finish();
+}
+const router = useRouter();
+function overGame() {
+  if (!canBack.value) return;
+  router.push("/");
 }
 </script>
 <style lang="less" scoped>

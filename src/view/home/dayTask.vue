@@ -1,6 +1,13 @@
 <template>
   <div class="h-[100vh] w-[100vw] overflow-auto bg">
     <div
+      @click="$router.push('/')"
+      class="absolute top-[10px] left-[5px] text-white text-[18px] font-bold flex items-center"
+    >
+      <
+      <div class="text-[12px] ml-[5px]">返回</div>
+    </div>
+    <div
       @click="click()"
       class="absolute left-0 top-[50vh] flex justify-center items-center flex-col w-full"
     >

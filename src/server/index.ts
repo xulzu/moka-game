@@ -11,6 +11,7 @@ import { Config } from "./Configs";
 import staticServe from "koa-static";
 import NodeCache from "node-cache";
 import dayjs from "dayjs";
+import axios from "axios";
 const GlobalCache = new NodeCache({ stdTTL: 60, checkperiod: 120 });
 
 class Game {
@@ -115,29 +116,35 @@ app.use(async (ctx, next) => {
 
 //认证jwt中间件
 app.use(async (ctx, next) => {
-  console.log(ctx.path);
   const jwt = ctx.cookies.get("bearer") || "";
-  if (!jwt) {
-    // throw new Error("请先登录");
+  const isDev = Config.DEV;
+  if (!jwt && !isDev) {
+    throw new Error("请先登录");
   }
   let user = "";
   if (GlobalCache.has(jwt)) {
     user = GlobalCache.get(jwt);
   } else {
-    // const { data } = await axios
-    //   .get("/api/auth/valid", {
-    //     baseURL: Config.AUTH_URL,
-    //     params: {
-    //       bearer: jwt,
-    //     },
-    //   })
-    //   .catch(() => {
-    //     throw new Error("认证出错");
-    //   });
-    // const userid = data?.jobNumber;
-    // const username = data?.name;
-    const userid = "230250";
-    const username = "张三";
+    let userid = "";
+    let username = "";
+    if (isDev) {
+      userid = "230250";
+      username = "张三";
+    } else {
+      const { data } = await axios
+        .get("/api/auth/valid", {
+          baseURL: Config.AUTH_URL,
+          params: {
+            bearer: jwt,
+          },
+        })
+        .catch(() => {
+          throw new Error("认证出错");
+        });
+      userid = data?.jobNumber;
+      username = data?.name;
+    }
+
     if (!userid || !username) {
       throw new Error("认证出错");
     }

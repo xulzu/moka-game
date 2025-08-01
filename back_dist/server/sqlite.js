@@ -1,5 +1,6 @@
-import Database from "better-sqlite3";
-const db = new Database("./gamedb.sqlite");
+import { DatabaseSync } from "node:sqlite";
+const db = new DatabaseSync("./gamedb.sqlite");
+import { Config } from "./Configs.js";
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -21,6 +22,15 @@ db.exec(`
     FOREIGN KEY (player1_id) REFERENCES users(userid),
     FOREIGN KEY (player2_id) REFERENCES users(userid),
     FOREIGN KEY (winner_id) REFERENCES users(userid)
+  )
+`);
+db.exec(`
+  CREATE TABLE IF NOT EXISTS signins (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    userid TEXT NOT NULL,
+    date TEXT NOT NULL, 
+    timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(userid, date)
   )
 `);
 const insertUser = db.prepare(`
@@ -84,6 +94,31 @@ function getLast3Matches(userid) {
 function getLast1Match() {
     return last1Matche.all();
 }
+//查询签到情况
+function getSigins(userid) {
+    const length = Config.SIGN_START_DAY?.length || 0;
+    const data = db
+        .prepare(`
+    SELECT * FROM signins
+    WHERE userid = ?
+    ORDER BY timestamp DESC
+    LIMIT ${length}
+  `)
+        .all(userid);
+    return data;
+}
+function getSignin(userid, date) {
+    return db
+        .prepare(`
+    SELECT 1 FROM signins WHERE userid = ? AND date = ?
+  `)
+        .get(userid, date);
+}
+function addSignin(userid, date) {
+    db.prepare(`
+    INSERT INTO signins (userid, date) VALUES (?, ?)
+  `).run(userid, date);
+}
 export const DataStore = {
     addUser,
     getUser,
@@ -92,4 +127,7 @@ export const DataStore = {
     getLast3Matches,
     getLast1Match,
     updateUserScore,
+    addSignin,
+    getSigins,
+    getSignin,
 };

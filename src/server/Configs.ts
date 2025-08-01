@@ -19,4 +19,5 @@ export const Config = {
   PORT,
   AUTH_URL,
   SIGN_START_DAY,
+  DEV: !!listen.dev,
 };
