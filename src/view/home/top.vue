@@ -5,7 +5,7 @@
   >
     <div class="mb-[20px] pt-[20px] relative">
       <span
-        @click="$router.push('/')"
+        @click="$router.replace('/')"
         class="absolute left-[4px] top-[22px] text-white text-[22px] font-[600]"
       >
         <

@@ -23,15 +23,13 @@ import { cloneDeep } from "lodash-es";
 import { ActiveZone } from "./ActiveZone";
 import { WaitDefenseZone } from "./WaitDefenseZone";
 import { PlayAnimation } from "./PlayAnimation";
+import { UserNmaeZone } from "./UserNameZone";
+import { showToast } from "vant";
 
 export class GameManager {
   static instance: GameManager;
 
   // 游戏状态
-  private currentPlayer: "player1" | "player2" = "player1";
-  private player1Health: number = 20;
-  private player2Health: number = 20;
-  private defenseZones: DefenseCard[] = [];
   app?: Application;
   handCards: Card[] = [];
   p2HandNum: number = 0;
@@ -43,12 +41,18 @@ export class GameManager {
   turnIdxZone: TurnIdxZone;
   healthZoneP1: Health;
   healthZoneP2: Health;
+  nameZoneP1: UserNmaeZone;
+  nameZoneP2: UserNmaeZone;
   waitDefenseZone: WaitDefenseZone;
   stackP1: Stack;
   stackP2: Stack;
   playAnimation: PlayAnimation;
   playing = false; //打出结算中
   playAnimating?: Promise<void>; //打出动画执行中
+  timerPlay?: any; //打出卡牌后无任何操作的倒计时，用来做提醒
+  timerPlayMax = 1;
+  timerTurnStart?: any; //回合开始时挂机倒计时，用来做提醒
+  timerTurnStartMax = 1;
   static getInstance() {
     return GameManager.instance;
   }
@@ -64,6 +68,17 @@ export class GameManager {
       this.activeZone.x = vw100 / 2 - ActiveZone.width / 2;
       this.activeZone.y = vh100 / 2 - ActiveZone.width / 2 - 30;
       app.stage.addChild(this.activeZone);
+    }
+    {
+      //初始化名称展示区
+      this.nameZoneP1 = new UserNmaeZone();
+      this.nameZoneP1.visible = false;
+      this.nameZoneP2 = new UserNmaeZone();
+      this.nameZoneP1.x = vw100 - 68;
+      this.nameZoneP1.y = vh100 - 260;
+      this.nameZoneP2.x = 5;
+      this.nameZoneP2.y = 162;
+      app.stage.addChild(this.nameZoneP1, this.nameZoneP2);
     }
 
     {
@@ -138,39 +153,31 @@ export class GameManager {
     }
   }
 
-  getDefenseZones() {
-    return this.defenseZones;
-  }
-
   pushHandCard(...cards: Card[]) {
     this.handCards.push(...cards);
   }
+  turnChange(isP1: boolean) {
+    this.turnIdxZone.toggle(isP1);
+    clearTimeout(this.timerPlay);
+    clearTimeout(this.timerTurnStart);
+    if (isP1 && this.timerTurnStartMax >= 0) {
+      this.timerTurnStartMax--;
+      this.timerTurnStart = setTimeout(() => {
+        showToast("请从手牌中选择一张攻击卡或策略卡进行打出");
+      }, 5000);
+    }
+  }
 
   async playCard(card: Card) {
-    console.log(`打出卡片: ${card.cardData.name} (${card.cardData.type})`);
     fetch("/api/play?id=" + card.cardData.id + "&user=230250");
-  }
-  drawCard(n: number) {
-    throw new Error("not implemented");
-  }
-  showPlayer2NextCard() {
-    throw new Error("not implemented");
-  }
-
-  // 处理防御卡
-  setDefenseCard(zoneIndex: number, id: number | null) {
-    const defenseZone = this.defenseZones[zoneIndex];
-    const card = this.allCards.find((item) => item.id === id);
-    if (!defenseZone || !card || card.type !== "defense") {
-      return;
+    clearTimeout(this.timerPlay);
+    clearTimeout(this.timerTurnStart);
+    if (this.timerPlayMax >= 0) {
+      this.timerPlayMax--;
+      this.timerPlay = setTimeout(() => {
+        showToast("操作完成后请点击右侧结束按钮结束自己回合");
+      }, 5000);
     }
-    defenseZone.activeZone(card as DefenseCardData);
-  }
-
-  // 处理策略卡
-  private handleSpecialCard(card: Card) {
-    console.log(`处理策略卡: ${card.cardData.name}`);
-    // 根据标签处理不同效果
   }
 
   // 从p1手牌移除卡片
@@ -346,12 +353,14 @@ export class GameManager {
     hand.cardData._tempDefense = lastTempDefense;
     hand.updateNum();
   }
-  // 获取游戏状态（用于UI更新）
-  getGameState() {
-    return {
-      currentPlayer: this.currentPlayer,
-      player1Health: this.player1Health,
-      player2Health: this.player2Health,
-    };
+  clearTimer() {
+    clearInterval(this.timerPlay);
+    clearInterval(this.timerTurnStart);
+    this.timerPlay = this.timerTurnStart = null;
+  }
+  clear() {
+    GameManager.instance = null;
+    this.clearTimer();
+    this.app?.destroy();
   }
 }

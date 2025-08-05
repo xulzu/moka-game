@@ -145,7 +145,7 @@ export class WaitDefenseZone extends Container {
       //文本更新
       this.titleTxtContainer.removeChildren();
       const info = new Text({
-        text: self ? "我方进行防御" : "对方进行防御",
+        text: self ? "双击或拖动蓝色防御卡防御" : "对方进行防御",
         style: {
           fontSize: 20,
           fill: "#fff",
@@ -159,7 +159,6 @@ export class WaitDefenseZone extends Container {
     }
   }
   skip() {
-    console.log("skip");
     axios.get("/api/skipDefenseCard");
   }
 }

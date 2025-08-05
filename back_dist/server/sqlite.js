@@ -33,6 +33,14 @@ db.exec(`
     UNIQUE(userid, date)
   )
 `);
+//体力表
+db.exec(`
+  CREATE TABLE IF NOT EXISTS player_stamina (
+      player_id     TEXT PRIMARY KEY,
+      stamina       INTEGER NOT NULL,
+      last_update   INTEGER NOT NULL
+  );
+  `);
 const insertUser = db.prepare(`
   INSERT INTO users (userid, name,avatar, score) VALUES (?, ?, ?, ?)
 `);
@@ -58,8 +66,9 @@ const last3Matches = db.prepare(`
   SELECT *
   FROM matches
   WHERE
-    player1_id = @userid
-    AND player2_id != 'roobot'
+    (player1_id = @userid AND player2_id != 'roobot') 
+      or 
+    (player2_id = @userid and player1_id != 'roobot')
   ORDER BY datetime(created_at) DESC
   LIMIT 3
 `);
@@ -75,12 +84,17 @@ function addUser(user) {
 function getUser(userid) {
     return getUserByUserid.get(userid);
 }
-function updateUserScore(userId, score) {
+function updateUserScore(userId, add_score) {
     const user = getUser(userId);
     if (!user) {
         throw "用户不存在，更新分数失败";
     }
-    updateScore.run(Math.max(0, score + user.score), userId);
+    updateScore.run(Math.max(0, add_score + user.score), userId);
+}
+function updateUserAvatar(userid, avatar) {
+    db.prepare(`
+    UPDATE users SET avatar = ? WHERE userid = ?
+    `).run(avatar, userid);
 }
 function getTopUsers() {
     return topUsers.all();
@@ -119,6 +133,25 @@ function addSignin(userid, date) {
     INSERT INTO signins (userid, date) VALUES (?, ?)
   `).run(userid, date);
 }
+function getStamina(userid) {
+    return db
+        .prepare(`
+    SELECT * FROM player_stamina WHERE player_id = ?
+  `)
+        .get(userid);
+}
+function updateStamina(userid, stamina) {
+    const currentTime = Date.now();
+    db.prepare(`
+    UPDATE player_stamina SET stamina = ?, last_update = ? WHERE player_id = ?
+  `).run(stamina, currentTime, userid);
+}
+function addStamina(userid, stamina) {
+    const currentTime = Date.now();
+    db.prepare(`
+    INSERT INTO player_stamina (player_id, stamina, last_update) VALUES (?, ?, ?)
+  `).run(userid, stamina, currentTime);
+}
 export const DataStore = {
     addUser,
     getUser,
@@ -127,7 +160,11 @@ export const DataStore = {
     getLast3Matches,
     getLast1Match,
     updateUserScore,
+    updateUserAvatar,
     addSignin,
     getSigins,
     getSignin,
+    getStamina,
+    updateStamina,
+    addStamina,
 };

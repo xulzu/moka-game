@@ -223,9 +223,14 @@ import { onBeforeUnmount, ref } from "vue";
 import img from "/assets/user_ico.webp";
 let controller: AbortController | null = null;
 import "/assets/loading_bg.webp";
+import { showToast } from "vant";
 const router = useRouter();
 const time = ref(0);
+let sseClint: EventSource;
 init();
+onBeforeUnmount(() => {
+  sseClint?.close();
+});
 async function init() {
   try {
     const user = localStorage.getItem("user");
@@ -245,23 +250,36 @@ async function start() {
 
   const tag = await new Promise((res) => {
     const sse = new EventSource(`/sse/pending`);
+    sseClint = sse;
     sse.onmessage = (event) => {
       const data = event.data;
       sse.close();
       res(data);
     };
+    sse.onerror = (event: any) => {
+      const msg = event.data as string;
+      if (msg) {
+        showToast(msg);
+      } else {
+        showToast("游戏出错，重进试试");
+      }
+      res(0);
+      sse.close();
+    };
   });
   if (Number(tag) === 1) {
     toGame();
+  } else {
+    cancel();
   }
 }
 function cancel() {
   axios.get("/api/cancel");
-  router.push(`/`);
+  router.replace(`/`);
 }
 
 async function toGame() {
-  router.push("/load");
+  router.replace("/load");
 }
 
 function formatTime(seconds: number) {

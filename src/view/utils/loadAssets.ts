@@ -27,6 +27,14 @@ export async function loadAssets() {
       src: "/assets/card_num.webp",
     },
     {
+      alias: "card_num_blue",
+      src: "/assets/card_num_blue.webp",
+    },
+    {
+      alias: "card_num_green",
+      src: "/assets/card_num_green.webp",
+    },
+    {
       alias: "aq1",
       src: "/cards/aq1.webp",
     },

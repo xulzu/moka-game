@@ -23,7 +23,7 @@ function next() {
       } else if (step.value === 3) {
         img.value = tips3;
       } else if (step.value > 3) {
-        router.push("/pend");
+        router.replace("/pend");
       }
     }, 100);
   }

@@ -33,7 +33,7 @@
     "id": 1,
     "type": "attack",
     "name": "提权攻击",
-    "description": "上一张打出[web攻击]时伤害+3",
+    "description": "当上一张打出[web攻击]类型时，伤害额外+3",
     "attack": 3,
     "bg": "up_root",
     "tag1": "DIRECT_ONLY",
@@ -100,14 +100,19 @@
     "id": 0,
     "type": "attack",
     "name": "弱口令攻击",
-    "description": "造成3点伤害",
-    "attack": 3,
+    "description": "密码爆破：上一张也打出\"弱口令攻击\"时，伤害额外+2",
+    "attack": 2,
     "bg": "ruokouling",
     "tag1": "DIRECT_ONLY",
     "tag2": "SYSTEM_EXPLOIT",
-    "tag3": null,
-    "link": null,
-    "linkEffect": [],
+    "tag3": "CHAINABLE",
+    "link": "弱口令攻击",
+    "linkEffect": [
+      {
+        "name": "a_2",
+        "args": { "n": 2 }
+      }
+    ],
     "duration": 0,
     "off": false
   },
@@ -115,14 +120,19 @@
     "id": 0,
     "type": "attack",
     "name": "弱口令攻击",
-    "description": "造成3点伤害",
-    "attack": 3,
+    "description": "密码爆破：上一张也打出\"弱口令攻击\"时，伤害额外+2",
+    "attack": 2,
     "bg": "ruokouling",
     "tag1": "DIRECT_ONLY",
     "tag2": "SYSTEM_EXPLOIT",
-    "tag3": null,
-    "link": null,
-    "linkEffect": [],
+    "tag3": "CHAINABLE",
+    "link": "弱口令攻击",
+    "linkEffect": [
+      {
+        "name": "a_2",
+        "args": { "n": 2 }
+      }
+    ],
     "duration": 0,
     "off": false
   },
@@ -161,7 +171,7 @@
     "id": 0,
     "type": "attack",
     "name": "恶意广告",
-    "description": "上一张打出[社工]时攻击+3",
+    "description": "当上一张打出[社工]类型时，伤害额外+3",
     "attack": 2,
     "bg": "eygg",
     "tag1": "DIRECT_ONLY",

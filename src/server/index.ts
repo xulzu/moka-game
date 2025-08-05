@@ -12,6 +12,7 @@ import staticServe from "koa-static";
 import NodeCache from "node-cache";
 import dayjs from "dayjs";
 import axios from "axios";
+import { queryAvatar } from "./utils";
 const GlobalCache = new NodeCache({ stdTTL: 60, checkperiod: 120 });
 
 class Game {
@@ -61,6 +62,9 @@ class Game {
     delete this.cancelFn[user];
     return res;
   }
+  getZoom() {
+    return this.allZoom;
+  }
   getPlayer(id: string) {
     return this.allZoom[id];
   }
@@ -89,9 +93,6 @@ class Game {
     return game;
   }
   cancel(user: string) {
-    if (this.cancelFn[user]) {
-      console.log("取消ok");
-    }
     this.cancelFn[user]?.();
     delete this.cancelFn[user];
   }
@@ -122,26 +123,36 @@ app.use(async (ctx, next) => {
     throw new Error("请先登录");
   }
   let user = "";
-  if (GlobalCache.has(jwt)) {
+  if (GlobalCache.has(jwt) && !isDev) {
     user = GlobalCache.get(jwt);
   } else {
     let userid = "";
     let username = "";
     if (isDev) {
-      userid = "230250";
-      username = "张三";
+      userid = ctx.cookies.get("user");
+      username = ctx.cookies.get("username");
+      if (!userid) {
+        userid = "random_" + String(Math.random()).slice(2, 7);
+        username = userid;
+        // userid = "220811";
+        // username = "zy3";
+        ctx.cookies.set("user", userid);
+        ctx.cookies.set("username", encodeURIComponent(username));
+      }
     } else {
       const { data } = await axios
-        .get("/api/auth/valid", {
+        .get("/api/token/valid", {
           baseURL: Config.AUTH_URL,
+          timeout: 5 * 1000,
           params: {
             bearer: jwt,
           },
         })
-        .catch(() => {
+        .catch((err) => {
+          console.error("三方jwt认证服务出错", err);
           throw new Error("认证出错");
         });
-      userid = data?.jobNumber;
+      userid = data?.job_number;
       username = data?.name;
     }
 
@@ -168,6 +179,12 @@ app.use(staticServe("static"));
 router.get("/api/init", (ctx) => {
   const userid = ctx.user as string;
   const self = DataStore.getUser(userid);
+  //异步更新头像
+  queryAvatar(userid).then((avatar) => {
+    if (avatar) {
+      DataStore.updateUserAvatar(userid, avatar);
+    }
+  });
   ctx.body = self;
 });
 router.get("/api/list", (ctx) => {
@@ -179,6 +196,9 @@ router.get("/api/allCards", (ctx) => {
   ctx.body = Config.AllCards;
 });
 router.get("/sse/pending", async (ctx) => {
+  const user = ctx.user || ctx.query.user;
+  const match = user && DataStore.getUser(user);
+
   ctx.set({
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
@@ -186,21 +206,32 @@ router.get("/sse/pending", async (ctx) => {
   });
   ctx.status = 200;
   ctx.flushHeaders();
+  if (!match) {
+    ctx.res.write(`event: error\n`);
+    ctx.res.write("data: 用户不存在\n\n");
+    ctx.res.end();
+    return;
+  }
+  const stamina = readStamina(user);
+  if (stamina <= 2) {
+    ctx.res.write(`event: error\n`);
+    ctx.res.write("data: 体力不足2点，请等待体力恢复\n\n");
+    ctx.res.end();
+    return;
+  }
+
   ctx.res.write("retry: 0\n\n");
   ctx.req.on("close", () => {
     game.cancel(user);
     ctx.res.end();
   });
-  const user = ctx.user || ctx.query.user;
-  const match = user && DataStore.getUser(user);
-  if (!match) {
-    ctx.body = "用户不存在" + user;
-    ctx.status = 400;
-    ctx.res.end();
-    return;
-  }
+
   const ok = await game.pending(user);
   ctx.res.write(`data:${ok}\n\n`);
+  if (ok) {
+    // 匹配成功，消耗2点体力,注意别减到负数
+    DataStore.updateStamina(user, Math.max(0, stamina - 2));
+  }
 });
 router.get("/api/cancel", (ctx) => {
   const user = ctx.user;
@@ -358,11 +389,13 @@ router.get("/api/test", (ctx) => {
     danger: player.danger,
   };
 });
+router.get("/api/debug", (ctx) => {
+  ctx.body = Object.keys(game.getZoom());
+});
 router.get("/api/sigins", (ctx) => {
   const user = ctx.user;
   const today = dayjs().format("YYYY-MM-DD");
   const data = DataStore.getSigins(user)?.map((item) => item.date) || [];
-  console.log(data);
   const cfg = Config.SIGN_START_DAY || [];
   const arr = new Array(cfg.length).fill(0);
   for (let i = 0; i < arr.length; i++) {
@@ -373,7 +406,12 @@ router.get("/api/sigins", (ctx) => {
       arr[i] = cfg[i] < today ? -1 : 0;
     }
   }
-  ctx.body = arr;
+  ctx.body = arr.map((item, idx) => {
+    return {
+      sigin: item,
+      date: cfg[idx],
+    };
+  });
 });
 router.get("/api/signin", (ctx) => {
   const user = ctx.user;
@@ -388,9 +426,38 @@ router.get("/api/signin", (ctx) => {
   DataStore.updateUserScore(user, 5);
   ctx.body = "ok";
 });
+router.get("/api/signin/status", (ctx) => {
+  const user = ctx.user;
+  const cur_date = dayjs().format("YYYY-MM-DD");
+  const ready = DataStore.getSignin(user, cur_date);
+  ctx.body = !!ready;
+});
+router.get("/api/stamina", (ctx) => {
+  const user = ctx.user;
+  const stamina = readStamina(user);
+  ctx.body = stamina;
+});
+
 app.use(router.routes());
 app.use(router.allowedMethods());
 const PORT = Config.PORT;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
+function readStamina(userid: string) {
+  const data = DataStore.getStamina(userid);
+  if (!data) {
+    DataStore.addStamina(userid, 24);
+    return 24;
+  }
+  const now = Date.now();
+  const last_update = data.last_update;
+  const diff_ms = now - last_update;
+  const diff_h = Math.floor(diff_ms / 1000 / 60 / 60);
+  //每小时恢复1点体力，最多24点
+  const stamina = Math.min(data.stamina + diff_h, 24);
+
+  DataStore.updateStamina(userid, stamina);
+  return stamina;
+}

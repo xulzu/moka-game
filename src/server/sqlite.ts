@@ -36,6 +36,15 @@ db.exec(`
     UNIQUE(userid, date)
   )
 `);
+
+//体力表
+db.exec(`
+  CREATE TABLE IF NOT EXISTS player_stamina (
+      player_id     TEXT PRIMARY KEY,
+      stamina       INTEGER NOT NULL,
+      last_update   INTEGER NOT NULL
+  );
+  `);
 const insertUser = db.prepare(`
   INSERT INTO users (userid, name,avatar, score) VALUES (?, ?, ?, ?)
 `);
@@ -64,8 +73,9 @@ const last3Matches = db.prepare(`
   SELECT *
   FROM matches
   WHERE
-    player1_id = @userid
-    AND player2_id != 'roobot'
+    (player1_id = @userid AND player2_id != 'roobot') 
+      or 
+    (player2_id = @userid and player1_id != 'roobot')
   ORDER BY datetime(created_at) DESC
   LIMIT 3
 `);
@@ -89,12 +99,19 @@ function getUser(userid: string) {
   return getUserByUserid.get(userid) as any;
 }
 
-function updateUserScore(userId: string, score: number) {
+function updateUserScore(userId: string, add_score: number) {
   const user = getUser(userId) as any;
   if (!user) {
     throw "用户不存在，更新分数失败";
   }
-  updateScore.run(Math.max(0, score + (user.score as number)), userId);
+  updateScore.run(Math.max(0, add_score + (user.score as number)), userId);
+}
+function updateUserAvatar(userid: string, avatar: string) {
+  db.prepare(
+    `
+    UPDATE users SET avatar = ? WHERE userid = ?
+    `
+  ).run(avatar, userid);
 }
 function getTopUsers() {
   return topUsers.all();
@@ -152,6 +169,31 @@ function addSignin(userid: string, date: string) {
   `
   ).run(userid, date);
 }
+function getStamina(userid: string) {
+  return db
+    .prepare(
+      `
+    SELECT * FROM player_stamina WHERE player_id = ?
+  `
+    )
+    .get(userid) as any;
+}
+function updateStamina(userid: string, stamina: number) {
+  const currentTime = Date.now();
+  db.prepare(
+    `
+    UPDATE player_stamina SET stamina = ?, last_update = ? WHERE player_id = ?
+  `
+  ).run(stamina, currentTime, userid);
+}
+function addStamina(userid: string, stamina: number) {
+  const currentTime = Date.now();
+  db.prepare(
+    `
+    INSERT INTO player_stamina (player_id, stamina, last_update) VALUES (?, ?, ?)
+  `
+  ).run(userid, stamina, currentTime);
+}
 export const DataStore = {
   addUser,
   getUser,
@@ -160,7 +202,12 @@ export const DataStore = {
   getLast3Matches,
   getLast1Match,
   updateUserScore,
+  updateUserAvatar,
   addSignin,
   getSigins,
   getSignin,
+
+  getStamina,
+  updateStamina,
+  addStamina,
 };

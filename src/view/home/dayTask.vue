@@ -11,17 +11,23 @@
       @click="click()"
       class="absolute left-0 top-[50vh] flex justify-center items-center flex-col w-full"
     >
-      <div class="text-[12px] font-serif mb-2">点击签到，领取今日积分奖励</div>
+      <div class="text-[12px] font-serif mb-4 mt-2">
+        点击签到，领取今日积分奖励
+      </div>
 
-      <div class="w-[160px] grid grid-cols-2 gap-y-3">
+      <div class="w-[190px] grid grid-cols-3 gap-y-8">
         <div
           v-for="(item, idx) in list"
           :key="idx"
-          class="w-[50px] h-[50px] bg-[#e8d1a8] rounded-[50%] justify-self-center text-[18px] flex items-center justify-center"
+          class="w-[40px] h-[40px] bg-[#e8d1a8] rounded-[50%] relative justify-self-center text-[18px] flex items-center justify-center"
         >
-          <span class="text-green-700" v-if="item === 1"> ✓ </span>
-          <span v-else-if="item === 0" class="text-gray-600"> </span>
+          <span class="text-green-700" v-if="item.sigin === 1"> ✓ </span>
+          <span v-else-if="item.sigin === 0" class="text-gray-600"> </span>
           <span v-else class="text-red-500">×</span>
+          <span class="absolute text-[12px] -bottom-[20px]">
+            <span v-if="item.date === today" class="text-blue-700">今天</span>
+            <span v-else>{{ format(item.date) }}</span>
+          </span>
         </div>
       </div>
     </div>
@@ -29,13 +35,25 @@
 </template>
 <script lang="ts" setup>
 import axios from "axios";
+import dayjs from "dayjs";
 import { showToast } from "vant";
 import { ref } from "vue";
-const list = ref<number[]>([]);
+const list = ref<
+  {
+    sigin: number;
+    date: string;
+  }[]
+>([]);
+const today = dayjs().format("YYYY-MM-DD");
 load();
 async function load() {
   const { data } = await axios.get("/api/sigins");
   list.value = data || [];
+}
+function format(str: string) {
+  const weekdays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+  const idx = dayjs(str).day();
+  return weekdays[idx];
 }
 async function click() {
   try {

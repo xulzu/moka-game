@@ -25,6 +25,7 @@ export class Player {
   prevCard?: CardData; // 上一张打出的牌 , 用于结算效果
   connect?: Connect;
   machine: boolean = false; //是否是AI
+  timeTurn = 30; //回合时间
   timeoutNum = 0; //烧绳子多少次
   firstConnect = true;
   score = 0;
@@ -136,7 +137,7 @@ export class Player {
     this.prevCard = card; // 记录上一张打出的牌
     this.tryGameOver(); // 尝试看能否结束游戏
     this.playNumOneTurn++;
-    this.emitter.emit("play", this.playNumOneTurn);
+    this.emitter.emit("play", this.playNumOneTurn, card);
     return 1;
   }
   turnEnd() {
@@ -170,6 +171,32 @@ export class Player {
     card._tempAttack = card._tempAttack || 0;
     const danger = card.attack + Number(card._tempAttack);
 
+    //回合内增加攻击效果
+    const one_turn_add_attack = (hand: AttackCardData, n: number) => {
+      hand._tempAttack = hand._tempAttack || 0;
+      hand._tempAttack += n;
+      const curIdx = this.playNumOneTurn + 1;
+      this.connect?.attackUpdate(hand.id, hand._tempAttack!);
+      let exec = false;
+      const clearFn = (idx: any) => {
+        if (idx === curIdx + 1 && hand.id !== this.curPlayCardId && !exec) {
+          // 打出下张牌时清空a_1临时增加的伤害
+          exec = true;
+          hand._tempAttack! -= n;
+          this.connect?.attackUpdate(hand.id, hand._tempAttack!);
+        }
+      };
+      this.emitter.on("play", clearFn);
+      this.emitter.once("turnEnd", () => {
+        if (!exec) {
+          exec = true;
+          hand._tempAttack! -= n;
+          this.connect?.attackUpdate(hand.id, hand._tempAttack!);
+        }
+        this.emitter.removeListener("play", clearFn);
+      });
+    };
+
     {
       //结算连击combo
       for (const hand of this.handCards) {
@@ -179,35 +206,24 @@ export class Player {
           hand.id !== card.id &&
           card.tag2 === hand.link
         ) {
+          //a_1 效果
           for (const e of hand.linkEffect || []) {
             if (e.name === "a_1") {
-              const n = (e.args?.n as number) || 0;
-              hand._tempAttack = hand._tempAttack || 0;
-              hand._tempAttack += n;
-              const curIdx = this.playNumOneTurn + 1;
-              this.connect?.attackUpdate(hand.id, hand._tempAttack!);
-              let exec = false;
-              const clearFn = (idx: any) => {
-                if (
-                  idx + 1 === curIdx &&
-                  hand.id !== this.curPlayCardId &&
-                  !exec
-                ) {
-                  // 打出下张牌时清空a_1临时增加的伤害
-                  exec = true;
-                  hand._tempAttack! -= n;
-                  this.connect?.attackUpdate(hand.id, hand._tempAttack!);
-                }
-              };
-              this.emitter.once("play", clearFn);
-              this.emitter.once("turnEnd", () => {
-                if (!exec) {
-                  exec = true;
-                  hand._tempAttack! -= n;
-                  this.connect?.attackUpdate(hand.id, hand._tempAttack!);
-                  this.emitter.removeListener("play", clearFn);
-                }
-              });
+              one_turn_add_attack(hand, Number(e.args?.n || 0));
+            }
+          }
+        }
+
+        if (
+          hand.type === "attack" &&
+          hand.tag3 === "CHAINABLE" &&
+          hand.id !== card.id &&
+          hand.link === card.name
+        ) {
+          //a_2 效果
+          for (const e of hand.linkEffect || []) {
+            if (e.name === "a_2") {
+              one_turn_add_attack(hand, Number(e.args?.n || 0));
             }
           }
         }
@@ -251,6 +267,7 @@ export class Player {
       this.danger = -1; // 结算后重置伤害值
       this.connect?.flushAttack();
       this.emitter.emit("flushAttack");
+      this.tryGameOver();
     }
   }
   //策略卡结算
@@ -284,6 +301,7 @@ export class Player {
     }
   }
   tryGameOver() {
+    if (this.room.gameFinish) return;
     let winner: Player | undefined;
     let failer: Player | undefined;
     if (this.health <= 0) {

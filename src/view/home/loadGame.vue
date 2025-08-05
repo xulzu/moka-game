@@ -42,6 +42,13 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { loadAssets } from "../utils/loadAssets";
 
+if (sessionStorage.getItem("reload") !== "ok") {
+  sessionStorage.setItem("reload", "ok");
+  location.reload();
+} else {
+  sessionStorage.removeItem("reload");
+}
+
 const p1Info = ref({
   src: img,
   name: "~",
@@ -55,7 +62,7 @@ init();
 async function init() {
   const { data } = await axios.get("/api/gameInfo");
   if (!data) {
-    router.push("/");
+    router.replace("/");
   } else {
     p1Info.value = data.p1Info || {};
     p2Info.value = data.p2Info || {};
@@ -67,7 +74,7 @@ async function init() {
         }, 2500);
       }),
     ]);
-    router.push(`/game`);
+    router.replace(`/game`);
   }
 }
 </script>

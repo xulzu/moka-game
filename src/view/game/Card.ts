@@ -9,7 +9,6 @@ import {
   TextStyle,
 } from "pixi.js";
 import { GameManager } from "./GameManager";
-import { actionDistance, screenWidth } from "./utils";
 import type { CardData } from "../../baseType/base";
 
 let id = 0;
@@ -22,13 +21,15 @@ export class Card extends Container {
   lastDragPosGlobalY: number = 0;
   cardData: CardData;
   draggle: boolean = true; // 是否可以拖动
-  moveCard?: Container;
+  moveCard?: Card;
   txtContainer?: Container;
   numContainer?: Container;
   detailTimer?: any;
   playDistance: number = 0;
   romveDetailStep = 0;
   preClickTime = 0;
+  dragPos?: [number, number];
+  _boundUpdateDragPos?: () => void;
   constructor(x: number, y: number, cardData?: CardData, app?: Application) {
     super();
     this.id = id++;
@@ -70,7 +71,13 @@ export class Card extends Container {
         //数值
         const numContainer = new Container();
         this.numContainer = numContainer;
-        const numBg = new Sprite(Assets.get("card_num"));
+        const bgMap = {
+          attack: "card_num",
+          defense: "card_num_blue",
+          special: "card_num_green",
+        };
+        const bg = bgMap[cardData.type] || bgMap.attack;
+        const numBg = new Sprite(Assets.get(bg));
         numBg.setSize(28, 28);
         numContainer.addChild(numBg);
         numContainer.x = 4;
@@ -160,6 +167,7 @@ export class Card extends Container {
     this.on("pointerdown", this.dragStart.bind(this));
     this.on("pointerup", this.dragEnd.bind(this));
     this.on("pointerupoutside", this.dragEnd.bind(this));
+    this._boundUpdateDragPos = this.updateDragPos.bind(this);
   }
   async trySetBg() {
     const bg = await Assets.load(this.cardData.bg).catch(() => null);
@@ -233,6 +241,7 @@ export class Card extends Container {
     const offset = event.getLocalPosition(this.parent);
     const offsetX = offset.x - this.x;
     const offsetY = offset.y - this.y;
+    GameManager.getInstance().app.ticker.add(this._boundUpdateDragPos);
     const newCardDragEnd = (e: FederatedPointerEvent) => {
       newCard.off("pointermove");
       newCard.off("pointerup");
@@ -246,8 +255,10 @@ export class Card extends Container {
       .on("pointermove", (e) => {
         if (!this.cardData) return;
         const pos = e.getLocalPosition(newCard.parent);
-        newCard.x = pos.x - offsetX;
-        newCard.y = pos.y - offsetY;
+        // newCard.x = pos.x - offsetX;
+        // newCard.y = pos.y - offsetY;
+        this.dragPos = [pos.x - offsetX, pos.y - offsetY];
+
         const gameManager = GameManager.getInstance();
         if (e.globalY <= this.playDistance) {
           gameManager.activeZone.show();
@@ -267,6 +278,8 @@ export class Card extends Container {
     const gameManager = GameManager.getInstance();
     gameManager.activeZone.hide();
     this.isDragging = false;
+    GameManager.getInstance().app.ticker.remove(this._boundUpdateDragPos);
+    this.dragPos = void 0;
     if (this.lastDragPosGlobalY <= this.playDistance) {
       gameManager.playCard(this);
     }
@@ -275,6 +288,13 @@ export class Card extends Container {
     }
     this.clearMoveCard();
     this.clearDetail();
+  }
+  updateDragPos() {
+    if (this.isDragging && this.moveCard && this.dragPos) {
+      const [tx, ty] = this.dragPos;
+      this.moveCard.x = tx;
+      this.moveCard.y = ty;
+    }
   }
   clearMoveCard() {
     if (this.moveCard) {

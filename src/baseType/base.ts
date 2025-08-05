@@ -19,7 +19,7 @@ export interface AttackCardData {
   tag1: Tag1;
   tag2: Tag2;
   tag3?: Tag3;
-  link: Tag2;
+  link: string;
   linkEffect: Effect[];
   duration: number;
 }

@@ -126,7 +126,7 @@ const win = ref("");
 const canBack = ref(false);
 const score = ref(0);
 const coin = ref(-1);
-
+let sseClint: EventSource;
 onMounted(() => {
   (async () => {
     await loadAssets();
@@ -170,6 +170,7 @@ onMounted(() => {
       time.value = time_;
     });
     const sse = new EventSource("/sse/connect");
+    sseClint = sse;
     sse.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === "error") {
@@ -203,7 +204,7 @@ onMounted(() => {
           gameManager.stackP2.updateNum(initData?.enemy?.stackNum || 0);
         }
         {
-          //初始化头像
+          //初始化头像和名称
           gameManager.healthZoneP1.updateAvatar(
             initData?.self?.avatar || "/assets/user_ico.webp"
           );
@@ -212,15 +213,17 @@ onMounted(() => {
               initData?.enemy?.avatar || "/assets/user_ico.webp"
             );
           }
+          gameManager.nameZoneP1.update(initData.self?.name || "~");
+          gameManager.nameZoneP2.update(initData.enemy?.name || "~");
         }
       } else if (data.type === "turnStart") {
-        gameManager.turnIdxZone.toggle(data.self);
+        gameManager.turnChange(data.self);
       } else if (data.type === "turnEndTimeout") {
         gameManager.turnIdxZone.updateTime(Number(data.data));
       } else if (data.type === "removeCard") {
         gameManager.removeCardFromHand(Number(data.data));
       } else if (data.type === "moreHandCard") {
-        showToast("手牌爆辣~");
+        showToast("手牌爆啦~");
       } else if (data.type === "p2RemoveCard") {
         gameManager.removeCardP2(data.data);
       } else if (data.type === "homeHurt") {
@@ -262,24 +265,25 @@ onMounted(() => {
         win.value = data.data;
         score.value = data.score;
         sse.close();
+        gameManager.clearTimer();
         setTimeout(() => {
           canBack.value = true;
         }, 2000);
       }
     };
     sse.onerror = (event) => {
-      console.log(event);
+      sse.close();
     };
   })();
 });
 
 onBeforeUnmount(() => {
-  GameManager.getInstance().app?.destroy();
-  GameManager.instance = null;
+  GameManager.getInstance()?.clear();
+  sseClint?.close();
 });
 
 function debug() {
-  // axios.get("/api/debug");
+  axios.get("/api/debug");
 }
 
 function endTurn() {
@@ -288,7 +292,7 @@ function endTurn() {
 const router = useRouter();
 function overGame() {
   if (!canBack.value) return;
-  router.push("/");
+  router.replace("/");
 }
 </script>
 <style lang="less" scoped>

@@ -120,7 +120,7 @@ export class GameZoom extends EventEmitter {
     const player = this.currentPlayer === 0 ? this.player1 : this.player2;
     const player_t = this.currentPlayer === 0 ? this.player2 : this.player1;
     player.turnStart();
-    const timeout = 30;
+    const timeout = player.timeTurn;
     let timeIdx = 0;
     this.timeoutTimer = setInterval(() => {
       if (player.danger !== -1) {
@@ -128,18 +128,20 @@ export class GameZoom extends EventEmitter {
         return;
       }
       timeIdx++;
-      player.connect?.turnEndTimeout(timeout - timeIdx);
-      player_t.connect?.turnEndTimeout(timeout - timeIdx);
+      const minus = timeout - timeIdx;
+      player.connect?.turnEndTimeout(minus);
+      player_t.connect?.turnEndTimeout(minus);
       if (timeIdx >= timeout) {
         clearInterval(this.timeoutTimer);
         this.turnEnd(this.currentPlayer);
         player.timeoutNum++;
-        if (player.timeoutNum === 2) {
-          player.connect?.optError("下次再自动结束回合则会输掉游戏哦-");
-        }
-        if (player.timeoutNum === 3) {
-          player.health = 0;
-          player.tryGameOver();
+        if (player.timeoutNum === 1) {
+          player.timeTurn = 20;
+        } else if (player.timeoutNum === 3) {
+          player.timeTurn = 10;
+          player.connect?.optError("操作完成后需主动点击右侧结束回合");
+        } else if (player.timeoutNum >= 5) {
+          player.timeTurn = 5;
         }
       }
     }, 1000);

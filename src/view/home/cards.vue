@@ -9,7 +9,7 @@
         @click="click"
       >
         <span
-          @click.stop="$router.push('/')"
+          @click.stop="$router.replace('/')"
           class="absolute text-[#f1f5f9] top-[18px] left-3 text-[20px]"
           ><
         </span>
