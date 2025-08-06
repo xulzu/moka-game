@@ -5,6 +5,7 @@ export async function queryAvatar(userid: string) {
     .get(
       "https://portal-server.eastmoney.com/bd-portal-server/portal/callEmpInfo",
       {
+        timeout: 5 * 1000,
         headers: {
           authToken: "42E0207A33103928EB17A50E4CB035F",
         },
