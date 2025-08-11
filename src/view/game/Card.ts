@@ -24,11 +24,13 @@ export class Card extends Container {
   moveCard?: Card;
   txtContainer?: Container;
   numContainer?: Container;
+  yellowOutline?: Sprite;
   detailTimer?: any;
   playDistance: number = 0;
   romveDetailStep = 0;
   preClickTime = 0;
   dragPos?: [number, number];
+
   _boundUpdateDragPos?: () => void;
   constructor(x: number, y: number, cardData?: CardData, app?: Application) {
     super();
@@ -44,6 +46,16 @@ export class Card extends Container {
         this.addChild(bg);
       } else {
         this.trySetBg();
+      }
+      {
+        //黄色边框
+        const bg = new Sprite(Assets.get("card-bg"));
+        bg.setSize(Card.width + 10, Card.height + 10);
+        bg.y = -5;
+        bg.x = -5;
+        this.addChild(bg);
+        this.yellowOutline = bg;
+        bg.visible = false;
       }
       {
         // name
@@ -236,6 +248,7 @@ export class Card extends Container {
     this.alpha = 0.5;
     this.isDragging = true;
     const newCard = new Card(this.x, this.y, this.cardData);
+    newCard.toggleYellowOutline(this.yellowOutline.visible);
     this.parent.addChild(newCard);
     this.moveCard = newCard;
     const offset = event.getLocalPosition(this.parent);
@@ -307,6 +320,8 @@ export class Card extends Container {
   showDetail() {
     this.romveDetailStep = 0;
     const detail = new Card(0, 0, this.cardData);
+    detail.toggleYellowOutline(this.yellowOutline.visible);
+
     detail.pivot.set(0, 0);
     detail.draggle = false;
     const w = 190;
@@ -324,5 +339,8 @@ export class Card extends Container {
       return;
     }
     GameManager.getInstance().cardDetailZone.removeChildren();
+  }
+  toggleYellowOutline(visible: boolean) {
+    this.yellowOutline.visible = visible;
   }
 }

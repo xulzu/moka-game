@@ -100,6 +100,12 @@ export class Player {
             writable: true,
             value: 0
         });
+        Object.defineProperty(this, "playActionPromse", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: null
+        });
         Object.defineProperty(this, "attackNumOneTurn", {
             enumerable: true,
             configurable: true,
@@ -200,7 +206,7 @@ export class Player {
         this.connect?.drawEnd();
     }
     //打出牌,要负责数据校验
-    playCard(id) {
+    playAcion(id) {
         const idx = this.handCards.findIndex((c) => c.id === id);
         const card = this.handCards[idx];
         if (!card) {
@@ -242,10 +248,30 @@ export class Player {
         this.enemy?.connect?.p2RemoveCard(idx);
         this.playLimitOneTurn--;
         this.prevCard = card; // 记录上一张打出的牌
-        this.tryGameOver(); // 尝试看能否结束游戏
         this.playNumOneTurn++;
         this.emitter.emit("play", this.playNumOneTurn, card);
+        //播放打出动画
+        if (this.danger === -1) {
+            this.connect?.playAnimation(card);
+            this.enemy?.connect?.playAnimation(card);
+        }
+        this.tryGameOver(); // 尝试看能否结束游戏
         return 1;
+    }
+    playCard(id) {
+        let resolveFn;
+        this.playActionPromse = new Promise((resolve) => {
+            resolveFn = resolve;
+        });
+        let res = 0;
+        try {
+            res = this.playAcion(id);
+        }
+        catch (error) {
+            console.log("打出动作发生错误", error);
+        }
+        resolveFn();
+        return res;
     }
     turnEnd() {
         if (this.handCards.length > 4) {
@@ -257,6 +283,7 @@ export class Player {
                 this.handCards.splice(0, 1);
             }
         }
+        this.playActionPromse = null;
         this.emitter.emit("turnEnd");
     }
     //防御卡结算
@@ -423,11 +450,10 @@ export class Player {
                 winner.score = winNum >= 2 ? 6 : 4;
             }
             failer.score = -2;
-            winner.connect?.gameOver("win", winner.score);
-            failer.connect?.gameOver("lose", failer.score);
-            this.room?.gameOver();
-            winner.connect?.close();
-            failer.connect?.close();
+            //等打出动作完成之后再完成最终结算
+            Promise.resolve(this.playActionPromse).then(() => {
+                this.room?.gameOver();
+            });
         }
     }
     static getWinNum(id) {

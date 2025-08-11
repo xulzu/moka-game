@@ -67,10 +67,10 @@ export class Connect {
         }));
     }
     //播放打出效果
-    playAnimation(id) {
+    playAnimation(card) {
         this.res.send(JSON.stringify({
             type: "playAnimation",
-            data: id,
+            data: card,
         }));
     }
     removeCard(id) {

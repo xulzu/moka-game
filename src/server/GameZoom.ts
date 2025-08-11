@@ -51,10 +51,6 @@ export class GameZoom extends EventEmitter {
     if (ok && player.danger !== -1) {
       this.waitDefenseCard(id);
     }
-    if (ok && player.danger === -1) {
-      player.connect?.playAnimation(id);
-      player_t.connect?.playAnimation(id);
-    }
   }
 
   //打出攻击卡后等待对方打出防御卡
@@ -150,9 +146,7 @@ export class GameZoom extends EventEmitter {
     if (this.gameFinish) return;
     clearInterval(this.timeoutTimer);
     clearInterval(this.waitTimer);
-
     this.gameFinish = true;
-    this.emit("gameOver");
     if (this.started) {
       const winner =
         this.player1.id === this.winner_id ? this.player1 : this.player2;
@@ -166,6 +160,11 @@ export class GameZoom extends EventEmitter {
         score1: this.player1.score,
         score2: this.player2.score,
       });
+      winner.connect?.gameOver("win", winner.score);
+      failer.connect?.gameOver("lose", failer.score);
+      winner.connect?.close();
+      failer.connect?.close();
     }
+    this.emit("gameOver"); //这一步往外通知的要优化下，需确保两名玩家的打出动作都结束后再触发
   }
 }

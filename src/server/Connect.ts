@@ -105,11 +105,11 @@ export class Connect {
     );
   }
   //播放打出效果
-  playAnimation(id: number) {
+  playAnimation(card: CardData) {
     this.res.send(
       JSON.stringify({
         type: "playAnimation",
-        data: id,
+        data: card,
       })
     );
   }

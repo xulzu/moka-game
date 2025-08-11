@@ -328,13 +328,20 @@ export class GameManager {
     this.waitDefenseZone.updateTime(self, time, card as AttackCardData);
   }
   // 播放打出动画
-  playCardAnimation(id: number) {
-    const card = this.allCards.find((item) => item.id === id);
+  playCardAnimation(card: CardData) {
     if (!card) {
       console.log("播放效果，但没卡牌");
       return;
     }
     this.playAnimation.play(card);
+  }
+
+  toggleYellowOutline(types: CardData["type"][], visible: boolean) {
+    for (const card of this.handCards) {
+      if (types.includes(card.cardData.type)) {
+        card.toggleYellowOutline(visible);
+      }
+    }
   }
   //更新攻击牌的临时攻击力
   upCardTempAttck(id: number, lastTempAttack: number) {

@@ -218,6 +218,13 @@ onMounted(() => {
         }
       } else if (data.type === "turnStart") {
         gameManager.turnChange(data.self);
+        if (data.self) {
+          gameManager.toggleYellowOutline(["defense"], false);
+          gameManager.toggleYellowOutline(["attack", "special"], true);
+        } else {
+          gameManager.toggleYellowOutline(["attack", "special"], false);
+          gameManager.toggleYellowOutline(["defense"], true);
+        }
       } else if (data.type === "turnEndTimeout") {
         gameManager.turnIdxZone.updateTime(Number(data.data));
       } else if (data.type === "removeCard") {
@@ -243,6 +250,7 @@ onMounted(() => {
       } else if (data.type === "drawCard") {
         if (data.self) {
           gameManager.pushCard(0, data.data);
+          gameManager.toggleYellowOutline(["attack", "special"], true);
         } else {
           gameManager.pushCard(1, data.data);
         }
