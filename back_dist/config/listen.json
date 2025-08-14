@@ -1,5 +1,4 @@
 {
-  "dev": false,
   "port": 51820,
   "auth": "http://security.caifudaren.com.cn",
   "sign_start_day": [
