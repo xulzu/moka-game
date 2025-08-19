@@ -1,6 +1,6 @@
 <template>
   <div
-    class="h-[100vh] w-[100vw] bg-[#000000c7] absolute left-0 top-0 z-10 text-white text-[14px] p-2 justify-center flex flex-col items-center"
+    class="h-full w-full bg-[#000000c7] absolute left-0 top-0 z-10 text-white text-[14px] p-2 justify-center flex flex-col items-center"
   >
     <div class="w-[80%] space-y-2 relative">
       <div class="text-red-500">X 关闭</div>

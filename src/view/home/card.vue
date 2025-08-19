@@ -17,7 +17,7 @@ onMounted(async () => {
   await app.init({
     background: "#2a174c",
     resizeTo: divRef.value!,
-    resolution: window.devicePixelRatio,
+    resolution: window.isMobile ? window.devicePixelRatio : 2,
     autoDensity: true,
   });
   divRef.value?.appendChild(app.canvas);

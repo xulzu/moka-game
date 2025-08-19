@@ -1,7 +1,7 @@
 <template>
-  <div class="z-0 bg absolute top-0 left-0 h-[100vh] w-[100vw]"></div>
+  <div class="z-0 bg absolute top-0 left-0 h-full w-full"></div>
   <div
-    class="z-10 relative bg-[#1e1d6685] w-[100vw] h-[100vh] p-[5px] overflow-auto hide-scrollbar"
+    class="z-10 relative bg-[#1e1d6685] w-full h-full p-[5px] overflow-auto hide-scrollbar"
   >
     <div class="mb-[20px] pt-[20px] relative">
       <span
@@ -151,31 +151,26 @@
         </div>
       </div>
     </div>
-
-    <div class="fixed p-[5px] left-0 bottom-[2px] w-full">
-      <div class="h-full w-full flex rounded-[6px] overflow-hidden selfShadow">
-        <div
-          class="w-[65px] bg-[#7264ad] text-[22px] font-bold text-white text-center leading-[60px]"
-        >
-          {{ self && self.rank > 99 ? "99+" : self?.rank }}
+  </div>
+  <div class="absolute z-30 p-[5px] left-0 bottom-[2px] w-full">
+    <div class="w-full flex rounded-[6px] overflow-hidden selfShadow">
+      <div
+        class="w-[65px] bg-[#7264ad] text-[22px] font-bold text-white text-center leading-[60px]"
+      >
+        {{ self && self.rank > 99 ? "99+" : self?.rank }}
+      </div>
+      <div class="flex-1 bg-[#6755a0] flex items-center pl-[10px] text-[12px]">
+        <img
+          :src="self?.avatar || img1"
+          class="w-[45px] h-[45px] rounded-[50%] border-[2px] border-solid border-[#ecd4d4] overflow-hidden"
+          alt=""
+          @error="self && (self.avatar = img1)"
+        />
+        <div class="text-[#ea9f0c] ml-[10px]">
+          {{ self?.name || "~" }}
         </div>
-        <div
-          class="flex-1 bg-[#6755a0] flex items-center pl-[10px] text-[12px]"
-        >
-          <img
-            :src="self?.avatar || img1"
-            class="w-[45px] h-[45px] rounded-[50%] border-[2px] border-solid border-[#ecd4d4] overflow-hidden"
-            alt=""
-            @error="self && (self.avatar = img1)"
-          />
-          <div class="text-[#ea9f0c] ml-[10px]">
-            {{ self?.name || "~" }}
-          </div>
-          <div
-            class="text-[#ea9f0c] ml-[10px] flex-1 flex justify-end p-[20px]"
-          >
-            积分：{{ self?.score || 0 }}
-          </div>
+        <div class="text-[#ea9f0c] ml-[10px] flex-1 flex justify-end p-[20px]">
+          积分：{{ self?.score || 0 }}
         </div>
       </div>
     </div>

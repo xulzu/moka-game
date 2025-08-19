@@ -1,6 +1,6 @@
 <template>
   <div
-    class="h-[100vh] relative w-[100vw] bg text-white flex flex-col items-center pt-[10vh]"
+    class="h-full relative w-full bg text-white flex flex-col items-center pt-[10%]"
   >
     <!-- From Uiverse.io by emmanuelh-dev -->
 
@@ -194,7 +194,7 @@
       </div>
     </div>
 
-    <div class="absolute bottom-[24vh] flex flex-col items-center">
+    <div class="absolute bottom-[24%] flex flex-col items-center">
       <div class="text-[14px] text-white">匹配对手中</div>
       <div class="relative text-white text-[20px] mt-2 w-[200px] text-center">
         <span class="z-10" style="font-family: Consolas">

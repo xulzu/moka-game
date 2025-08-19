@@ -2,7 +2,7 @@
   <div
     v-if="show"
     @click="show = false"
-    class="fixed top-0 left-0 h-[100vh] w-[100vw] z-10 bg-[#060606c9] flex flex-col justify-center items-center"
+    class="absolute top-0 left-0 h-full w-full z-10 bg-[#060606c9] flex flex-col justify-center items-center"
   >
     <div class="relative">
       <img src="/assets/btn_bg.webp" alt="" class="w-[140px]" />

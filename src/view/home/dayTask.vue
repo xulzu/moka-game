@@ -1,5 +1,5 @@
 <template>
-  <div class="h-[100vh] w-[100vw] overflow-auto bg">
+  <div class="h-full w-full overflow-auto bg">
     <div
       @click="$router.push('/')"
       class="absolute top-[10px] left-[5px] text-white text-[18px] font-bold flex items-center"
@@ -9,7 +9,7 @@
     </div>
     <div
       @click="click()"
-      class="absolute left-0 top-[50vh] flex justify-center items-center flex-col w-full"
+      class="absolute left-0 top-[50%] flex justify-center items-center flex-col w-full"
     >
       <div class="text-[12px] font-serif mb-4 mt-2">
         点击签到，领取今日积分奖励

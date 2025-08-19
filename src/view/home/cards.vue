@@ -1,6 +1,8 @@
 <template>
-  <div class="bg-[#2a174c] relative pt-[60px]">
-    <div class="w-[100vw] p-[6px]">
+  <div
+    class="bg-[#2a174c] relative pt-[60px] h-full overflow-auto hide-scrollbar"
+  >
+    <div class="w-full p-[6px]">
       <div
         class="z-10 w-full absolute top-0 left-0"
         :style="{
@@ -19,7 +21,7 @@
       </div>
       <div
         ref="allDivRef"
-        class="w-full min-h-[100vh]"
+        class="w-full min-h-full"
         :style="{
           height: maxHeight + 'px',
         }"
@@ -30,7 +32,7 @@
   <div
     @click="close"
     v-if="showDetail"
-    class="fixed right-0 top-0 w-[100vw] h-[100vh] bg-[#171616df] z-10 flex justify-center items-center"
+    class="absolute right-0 top-0 w-full h-full bg-[#171616df] z-10 flex justify-center items-center"
   >
     <div class="w-[220px] h-[320px]" ref="divRef"></div>
   </div>
@@ -48,6 +50,7 @@ const divRef = useTemplateRef("divRef");
 const showDetail = ref(false);
 const allCards = ref<any[]>([]);
 const maxHeight = ref(0);
+
 let cardH = 0;
 let detailApp: Application;
 async function clickCard(params: any) {
@@ -58,7 +61,7 @@ async function clickCard(params: any) {
   await app.init({
     background: "#2a174c",
     resizeTo: divRef.value!,
-    resolution: window.devicePixelRatio,
+    resolution: window.isMobile ? window.devicePixelRatio : 2,
     autoDensity: true,
   });
   divRef.value?.appendChild(app.canvas);
@@ -85,7 +88,7 @@ async function load() {
   await app.init({
     background: "#2a174c",
     resizeTo: allDivRef.value!,
-    resolution: window.devicePixelRatio,
+    resolution: window.isMobile ? window.devicePixelRatio : 2,
     autoDensity: true,
   });
   allDivRef.value?.appendChild(app.canvas);
@@ -133,4 +136,13 @@ function totol() {
   );
 }
 </script>
-<style lang="less" scoped></style>
+<style lang="less" scoped>
+.hide-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Opera */
+}
+</style>

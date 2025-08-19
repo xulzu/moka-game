@@ -1,7 +1,7 @@
 <template>
-  <div class="relative">
-    <div id="pixi-container" class="w-[100vw] h-[100vh]"></div>
-    <div class="fixed z-10 right-0 top-[44%] translate-y-[-50%] isolate">
+  <div class="relative w-full h-full">
+    <div id="pixi-container" class="w-full h-full"></div>
+    <div class="absolute z-10 right-0 top-[44%] translate-y-[-50%] isolate">
       <div
         @click="endTurn"
         class="w-[55px] h-[69px] transform-3d relative transition"
@@ -39,32 +39,32 @@
     <div
       v-if="win"
       @click="overGame"
-      class="fixed left-0 top-0 h-[100vh] w-[100vw] z-10 bg-[#060606c9]"
+      class="absolute left-0 top-0 h-full w-full z-10 bg-[#060606c9]"
     >
       <img
         v-if="win === 'win'"
         src="/assets/win.webp"
-        class="absolute w-[250px] left-1/2 -translate-x-1/2 top-[30vh] element"
+        class="absolute w-[250px] left-1/2 -translate-x-1/2 top-[30%] element"
         alt=""
       />
       <img
         v-else
         src="/assets/lose.webp"
-        class="absolute w-[250px] left-1/2 -translate-x-1/2 top-[30vh] element"
+        class="absolute w-[250px] left-1/2 -translate-x-1/2 top-[30%] element"
         alt=""
       />
       <div
-        class="absolute bottom-[40vh] left-1/2 -translate-1/2 text-[#bb7c00] text-[16px] txtmove"
+        class="absolute bottom-[40%] left-1/2 -translate-1/2 text-[#bb7c00] text-[16px] txtmove"
       >
         积分 {{ score >= 0 ? `+${score}` : score }}
       </div>
     </div>
     <div
-      class="fixed left-0 top-0 h-[100vh] w-[100vw] z-10 bg-[#060606c9]"
+      class="absolute left-0 top-0 h-full w-full z-10 bg-[#060606c9]"
       v-if="coin !== -1"
     >
       <div
-        class="w-[80px] h-[80px] transform-3d absolute left-1/2 -translate-x-1/2 top-[30vh] transition"
+        class="w-[80px] h-[80px] transform-3d absolute left-1/2 -translate-x-1/2 top-[30%] transition"
         :class="{
           coin_front: coin === 0,
           coin_back: coin === 1,
@@ -88,13 +88,13 @@
         src="/assets/front.webp"
         v-if="coin === 0"
         alt=""
-        class="absolute left-1/2 -translate-x-1/2 top-[48vh] scale-[0.75] txtmove"
+        class="absolute left-1/2 -translate-x-1/2 top-[48%] scale-[0.75] txtmove"
       />
       <img
         src="/assets/back.webp"
         v-else-if="coin === 1"
         alt=""
-        class="absolute left-1/2 -translate-x-1/2 top-[48vh] scale-[0.75] txtmove"
+        class="absolute left-1/2 -translate-x-1/2 top-[48%] scale-[0.75] txtmove"
       />
     </div>
   </div>
@@ -135,8 +135,8 @@ onMounted(() => {
     // Initialize the application
     await app.init({
       background: "#1099bb",
-      resizeTo: window,
-      resolution: window.devicePixelRatio,
+      resizeTo: document.querySelector("#pixi-container") as HTMLElement,
+      resolution: window.isMobile ? window.devicePixelRatio : 2,
       autoDensity: true,
     });
 

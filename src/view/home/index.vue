@@ -1,7 +1,7 @@
 <template>
   <div
     @click="fullScreen"
-    class="h-[100vh] w-[100vw] flex justify-center items-center relative flex-col bg"
+    class="h-full w-full flex justify-center items-center relative flex-col bg"
   >
     <Desc v-if="showDesc" @click="showDesc = false"></Desc>
     <img
@@ -10,7 +10,7 @@
       @click="start"
       srcset=""
       width="120"
-      class="shdaow_ absolute top-[40vh] left-1/2 -translate-x-1/2"
+      class="shdaow_ absolute top-[40%] left-1/2 -translate-x-1/2"
     />
     <img
       :src="btn1"
@@ -18,7 +18,7 @@
       srcset=""
       @click="$router.push('/top')"
       width="90"
-      class="shdaow_ absolute top-[calc(40vh+120px)] left-[16vw]"
+      class="shdaow_ absolute top-[calc(40%+120px)] left-[16%]"
     />
     <img
       :src="btn2"
@@ -26,9 +26,9 @@
       @click="$router.push('/cards')"
       srcset=""
       width="90"
-      class="shdaow_ absolute top-[calc(40vh+120px)] right-[16vw]"
+      class="shdaow_ absolute top-[calc(40%+120px)] right-[16%]"
     />
-    <div class="absolute top-[18vh] right-[4px]">
+    <div class="absolute top-[18%] right-[4px]">
       <div @click="showStamina" class="">
         <img
           src="/assets/tili.webp"

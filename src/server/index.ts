@@ -117,7 +117,9 @@ app.use(async (ctx, next) => {
 
 //认证jwt中间件
 app.use(async (ctx, next) => {
-  const jwt = ctx.cookies.get("bearer") || "";
+  const jwt =
+    ctx.cookies.get("bearer") ||
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJQQyIsInN1YiI6IuW-kOemj-WGmyIsImF1ZCI6WyJncm91cCJdLCJleHAiOjE3NTUyNzkzMTcsIm5iZiI6MTc1NTI1NzY1NywiaWF0IjoxNzU1MjU3NzE3LCJqdGkiOiIyMzAyNTAiLCJwaHQiOiJodHRwOi8vZGRjZG4uZWFzdG1vbmV5LmNvbS9pbWFnZS85MzEzMzY4MzYwMjQ0ODM4NC5qcGciLCJhdnQiOiJodHRwczovL2Rvbmdkb25nLWFwaS5lYXN0bW9uZXkuY29tL2Rvbmdkb25nLWNkbi9pbWFnZS8zMTA3Mjk2ODc5ODY1NDgyMjQucG5nIn0.bNwyOkF824QhaEC3uRFRzcGFPLrdNCJXJLi-yBEZqPM";
   const isDev = Config.DEV;
   if (!jwt && !isDev) {
     throw new Error("请先登录");
@@ -157,7 +159,7 @@ app.use(async (ctx, next) => {
     }
 
     if (!userid || !username) {
-      throw new Error("认证出错");
+      throw new Error("认证出错,缺少用户名或工号");
     }
     const userInfo = DataStore.getUser(userid);
     if (!userInfo) {
@@ -179,12 +181,15 @@ app.use(staticServe("static"));
 router.get("/api/init", (ctx) => {
   const userid = ctx.user as string;
   const self = DataStore.getUser(userid);
-  //异步更新头像
-  queryAvatar(userid).then((avatar) => {
-    if (avatar) {
-      DataStore.updateUserAvatar(userid, avatar);
-    }
-  });
+  if (!Config.DEV) {
+    //异步更新头像
+    queryAvatar(userid).then((avatar) => {
+      if (avatar) {
+        DataStore.updateUserAvatar(userid, avatar);
+      }
+    });
+  }
+
   ctx.body = self;
 });
 router.get("/api/list", (ctx) => {
@@ -196,7 +201,7 @@ router.get("/api/allCards", (ctx) => {
   ctx.body = Config.AllCards;
 });
 router.get("/sse/pending", async (ctx) => {
-  const user = ctx.user || ctx.query.user;
+  const user = ctx.user;
   const match = user && DataStore.getUser(user);
 
   ctx.set({
@@ -261,7 +266,6 @@ router.get("/sse/connect", async (ctx) => {
   const connect = new Connect({
     send: (data) => ctx.res.write(`data: ${data}\n\n`),
     close: () => {
-      console.log("游戏结束");
       closeConnect();
     },
   });

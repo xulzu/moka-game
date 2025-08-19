@@ -1,6 +1,6 @@
 <template>
   <div>
-    <img @click="next" :src="img" class="w-[100vw] h-[100vh]" alt="" />
+    <img @click="next" :src="img" class="w-full h-full" alt="" />
   </div>
 </template>
 <script lang="ts" setup>

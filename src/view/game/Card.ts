@@ -42,7 +42,11 @@ export class Card extends Container {
       if (bgt) {
         const bg = new Sprite(bgt);
         bg.texture.source.scaleMode = "nearest";
+        bg.texture.source.resolution = window.isMobile
+          ? window.devicePixelRatio
+          : 2;
         bg.setSize(Card.width, Card.height);
+
         this.addChild(bg);
       } else {
         this.trySetBg();
@@ -72,7 +76,7 @@ export class Card extends Container {
             fontSize: 11,
             fontFamily: "SimSun",
           },
-          resolution: 4,
+          resolution: window.isMobile ? 4 : 2,
         });
         nameTxt.x = 10;
         nameTxt.y = 5;
@@ -130,7 +134,7 @@ export class Card extends Container {
               breakWords: true,
               fontFamily: "SimSun",
             },
-            resolution: 4,
+            resolution: window.isMobile ? 4 : 3,
           });
           txt.y = -12;
           descContainer.addChild(txt);
@@ -146,7 +150,7 @@ export class Card extends Container {
               breakWords: true,
               fontFamily: "SimSun",
             },
-            resolution: 4,
+            resolution: window.isMobile ? 4 : 2,
           });
           descContainer.addChild(txt);
         }

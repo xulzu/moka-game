@@ -1,6 +1,6 @@
 <template>
-  <div class="h-[100vh] w-[100vw] bg text-white">
-    <div class="fixed top-[17vh]">
+  <div class="h-full w-full bg text-white">
+    <div class="absolute top-[17%]">
       <img src="/assets/loading_tag1.webp" class="w-[220px]" alt="" />
       <span class="absolute top-[10px] left-[10px] text-gray-300">
         {{ p2Info.name }}
@@ -16,7 +16,7 @@
         />
       </div>
     </div>
-    <div class="fixed bottom-[17vh] right-0">
+    <div class="absolute bottom-[17%] right-0">
       <img src="/assets/loading_tag2.webp" class="w-[220px]" alt="" />
       <span class="absolute top-[10px] right-[10px] text-gray-300">
         {{ p1Info.name }}
@@ -32,7 +32,9 @@
         />
       </div>
     </div>
-    <div class="fixed bottom-[20px] left-1/2 -translate-x-1/2">加载中...</div>
+    <div class="absolute bottom-[20px] left-1/2 -translate-x-1/2">
+      加载中...
+    </div>
   </div>
 </template>
 <script lang="ts" setup>

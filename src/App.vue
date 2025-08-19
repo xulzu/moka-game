@@ -1,8 +1,20 @@
 <template>
-  <div class="relative h-[100vh] w-[100vw] overflow-auto hide-scrollbar">
-    <RouterView />
+  <div
+    class="flex justify-center items-center sm:h-[100vh]"
+    :class="{
+      bigbk: !isMobile,
+    }"
+  >
+    <div
+      class="relative z-10 h-[100vh] sm:h-[667px] w-[100vw] sm:w-[375px] overflow-auto hide-scrollbar"
+    >
+      <RouterView />
+    </div>
   </div>
 </template>
+<script lang="ts" setup>
+const isMobile = window.isMobile;
+</script>
 
 <style scoped>
 .logo {
@@ -25,5 +37,22 @@
 
 .hide-scrollbar::-webkit-scrollbar {
   display: none; /* Chrome/Safari/Opera */
+}
+
+.bigbk {
+  background-image: url("/assets/bigbk.webp");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  backdrop-filter: brightness(0.5) blur(10px);
+}
+.bigbk::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #054151e6;
 }
 </style>
