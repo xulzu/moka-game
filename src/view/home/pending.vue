@@ -218,13 +218,15 @@
 <script lang="ts" setup>
 import axios from "axios";
 import { loadAssets } from "../utils/loadAssets";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { onBeforeUnmount, ref } from "vue";
 import img from "/assets/user_ico.webp";
 let controller: AbortController | null = null;
 import "/assets/loading_bg.webp";
 import { showToast } from "vant";
 const router = useRouter();
+const route = useRoute();
+const testMode = route.query.test === "true";
 const time = ref(0);
 let sseClint: EventSource;
 init();
@@ -249,7 +251,7 @@ async function start() {
   controller = new AbortController();
 
   const tag = await new Promise((res) => {
-    const sse = new EventSource(`/sse/pending`);
+    const sse = new EventSource(`/sse/pending?test=${testMode}`);
     sseClint = sse;
     sse.onmessage = (event) => {
       const data = event.data;
@@ -304,7 +306,7 @@ function formatTime(seconds: number) {
 }
 
 .bg {
-  background-image: url("@/assets/home.png");
+  background-image: url("@/assets/bgm2025.webp");
   background-size: 100% 100%;
 }
 

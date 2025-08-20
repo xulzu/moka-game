@@ -63,6 +63,12 @@ export class GameZoom extends EventEmitter {
             writable: true,
             value: false
         });
+        Object.defineProperty(this, "prod", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: true
+        });
         Object.defineProperty(this, "winner_id", {
             enumerable: true,
             configurable: true,
@@ -208,15 +214,17 @@ export class GameZoom extends EventEmitter {
         if (this.started) {
             const winner = this.player1.id === this.winner_id ? this.player1 : this.player2;
             const failer = winner.enemy;
-            DataStore.updateUserScore(winner.id, winner.score);
-            DataStore.updateUserScore(failer.id, failer.score);
-            DataStore.addMatch({
-                player1_id: this.player1.id,
-                player2_id: this.player2.id,
-                winner_id: this.winner_id,
-                score1: this.player1.score,
-                score2: this.player2.score,
-            });
+            if (this.prod) {
+                DataStore.updateUserScore(winner.id, winner.score);
+                DataStore.updateUserScore(failer.id, failer.score);
+                DataStore.addMatch({
+                    player1_id: this.player1.id,
+                    player2_id: this.player2.id,
+                    winner_id: this.winner_id,
+                    score1: this.player1.score,
+                    score2: this.player2.score,
+                });
+            }
             winner.connect?.gameOver("win", winner.score);
             failer.connect?.gameOver("lose", failer.score);
             winner.connect?.close();

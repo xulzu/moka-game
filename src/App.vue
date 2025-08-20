@@ -40,7 +40,7 @@ const isMobile = window.isMobile;
 }
 
 .bigbk {
-  background-image: url("/assets/bigbk.webp");
+  background-image: url("/assets/bg2025.webp");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -53,6 +53,6 @@ const isMobile = window.isMobile;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: #054151e6;
+  background-color: #171634e0;
 }
 </style>

@@ -7,7 +7,7 @@
     <img
       :src="btn0"
       alt=""
-      @click="start"
+      @click="start()"
       srcset=""
       width="120"
       class="shdaow_ absolute top-[40%] left-1/2 -translate-x-1/2"
@@ -28,17 +28,15 @@
       width="90"
       class="shdaow_ absolute top-[calc(40%+120px)] right-[16%]"
     />
-    <div class="absolute top-[18%] right-[4px]">
+    <div class="absolute top-[26%] right-[4px]">
       <div @click="showStamina" class="">
         <img
           src="/assets/tili.webp"
           alt=""
           class="h-[34px] translate-x-[6px]"
         />
-        <div class="text-white text-[12px] mt-1">
-          体力:<span style="font-family: Consolas">{{
-            String(stamina).padStart(2, "0")
-          }}</span>
+        <div class="text-white text-[12px] mt-1 w-[46px]">
+          次数:<span style="font-family: Consolas">{{ stamina >> 1 }}</span>
         </div>
       </div>
       <div class="mt-3" @click="$router.push('/tips')">
@@ -56,6 +54,14 @@
           class="h-[34px] translate-x-[6px]"
         />
         <div class="text-white text-[12px] translate-x-[8px] mt-1">规则</div>
+      </div>
+      <div class="mt-3" @click="start(true)">
+        <img
+          src="/assets/icon3.webp"
+          alt=""
+          class="h-[34px] translate-x-[6px]"
+        />
+        <div class="text-white text-[12px] translate-x-[8px] mt-1">试玩</div>
       </div>
       <div class="mt-3 relative" @click="$router.push('/dayTask')">
         <div
@@ -111,17 +117,18 @@ let isTipsCache = localStorage.getItem("isTips");
 if (isTipsCache) {
   isTips.value = true;
 }
-async function start() {
+async function start(test = false) {
   if (!isTips.value) {
     localStorage.setItem("isTips", "1");
     router.push("/tips");
   } else {
+    const prod = !test;
     await loadStamina();
-    if (stamina.value < 2) {
-      showToast("体力不足2点，每小时会恢复一点体力。");
+    if (stamina.value < 2 && prod) {
+      showToast("今日游玩次数不足，明日再来吧");
       return;
     }
-    router.push(`/pend`);
+    router.push(`/pend?test=${test}`);
   }
 }
 
@@ -130,7 +137,7 @@ function fullScreen() {
 }
 
 function showStamina() {
-  showToast("每局游戏会消耗2体力，每小时会恢复1点");
+  showToast("每天只能玩十次");
 }
 
 async function loadStamina() {
@@ -147,7 +154,7 @@ async function loadSignin() {
 </script>
 <style lang="less" scoped>
 .bg {
-  background-image: url("@/assets/home.png");
+  background-image: url("@/assets/bgm2025.webp");
   background-size: 100% 100%;
 }
 .shdaow_ {

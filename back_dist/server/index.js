@@ -34,7 +34,7 @@ class Game {
         });
     }
     //等待匹配
-    async pending(user) {
+    async pending(user, prod) {
         const idx = this.queue.findIndex((item) => item.user === user);
         if (idx !== -1) {
             this.queue.splice(idx, 1);
@@ -44,33 +44,41 @@ class Game {
             resolve_ = resolve;
         });
         let timer = void 0;
-        if (this.queue.length) {
-            const { user: p2, resolve: resolve_2 } = this.queue.shift();
-            this.createGame(user, p2);
-            resolve_2?.(1);
-            resolve_(1);
+        if (prod) {
+            if (this.queue.length) {
+                const { user: p2, resolve: resolve_2 } = this.queue.shift();
+                this.createGame(user, p2, true);
+                resolve_2?.(1);
+                resolve_(1);
+            }
+            else {
+                this.queue.push({ user, resolve: resolve_ });
+                timer = setTimeout(() => {
+                    const idx = this.queue.findIndex((item) => item.user === user);
+                    if (idx !== -1) {
+                        this.queue.splice(idx, 1);
+                        const pd_id = Computer.getId();
+                        const game = this.createGame(pd_id, user, true);
+                        new Computer(pd_id, game);
+                        resolve_(1);
+                    }
+                }, 10 * 1000);
+                this.cancelFn[user] = () => {
+                    clearTimeout(timer);
+                    resolve_(0);
+                    // 如果用户取消排队，则从队列中移除
+                    const idx = this.queue.findIndex((item) => item.user === user);
+                    if (idx !== -1) {
+                        this.queue.splice(idx, 1);
+                    }
+                };
+            }
         }
         else {
-            this.queue.push({ user, resolve: resolve_ });
-            timer = setTimeout(() => {
-                const idx = this.queue.findIndex((item) => item.user === user);
-                if (idx !== -1) {
-                    this.queue.splice(idx, 1);
-                    const pd_id = Computer.getId();
-                    const game = this.createGame(pd_id, user);
-                    new Computer(pd_id, game);
-                    resolve_(1);
-                }
-            }, 10 * 1000);
-            this.cancelFn[user] = () => {
-                clearTimeout(timer);
-                resolve_(0);
-                // 如果用户取消排队，则从队列中移除
-                const idx = this.queue.findIndex((item) => item.user === user);
-                if (idx !== -1) {
-                    this.queue.splice(idx, 1);
-                }
-            };
+            const pd_id = Computer.getId();
+            const game = this.createGame(pd_id, user, false);
+            new Computer(pd_id, game);
+            resolve_(1);
         }
         const res = await promise;
         clearTimeout(timer);
@@ -83,7 +91,7 @@ class Game {
     getPlayer(id) {
         return this.allZoom[id];
     }
-    createGame(user1, user2) {
+    createGame(user1, user2, prod = true) {
         let player1 = new Player(user1);
         let player2 = new Player(user2);
         if (Math.random() < 0.5) {
@@ -95,6 +103,7 @@ class Game {
             [player1, player2] = [player2, player1];
         }
         const game = new GameZoom(player1, player2);
+        game.prod = prod;
         game.on("gameOver", () => {
             // 游戏结束，清理内存
             delete this.allZoom[player1.id];
@@ -212,6 +221,8 @@ router.get("/api/allCards", (ctx) => {
 });
 router.get("/sse/pending", async (ctx) => {
     const user = ctx.user;
+    const test = ctx.query.test === "true";
+    const prod = !test;
     const match = user && DataStore.getUser(user);
     ctx.set({
         "Content-Type": "text/event-stream",
@@ -227,9 +238,9 @@ router.get("/sse/pending", async (ctx) => {
         return;
     }
     const stamina = readStamina(user);
-    if (stamina <= 2) {
+    if (stamina <= 2 && prod) {
         ctx.res.write(`event: error\n`);
-        ctx.res.write("data: 体力不足2点，请等待体力恢复\n\n");
+        ctx.res.write("data: 游玩次数不足\n\n");
         ctx.res.end();
         return;
     }
@@ -238,9 +249,9 @@ router.get("/sse/pending", async (ctx) => {
         game.cancel(user);
         ctx.res.end();
     });
-    const ok = await game.pending(user);
+    const ok = await game.pending(user, prod);
     ctx.res.write(`data:${ok}\n\n`);
-    if (ok) {
+    if (ok && prod) {
         // 匹配成功，消耗2点体力,注意别减到负数
         DataStore.updateStamina(user, Math.max(0, stamina - 2));
     }
@@ -452,15 +463,16 @@ app.listen(PORT, () => {
 function readStamina(userid) {
     const data = DataStore.getStamina(userid);
     if (!data) {
-        DataStore.addStamina(userid, 24);
-        return 24;
+        DataStore.addStamina(userid, 20);
+        return 20;
     }
-    const now = Date.now();
     const last_update = data.last_update;
-    const diff_ms = now - last_update;
-    const diff_h = Math.floor(diff_ms / 1000 / 60 / 60);
-    //每小时恢复1点体力，最多24点
-    const stamina = Math.min(data.stamina + diff_h, 24);
+    const preday = dayjs(last_update).format("YYYY-MM-DD");
+    const today = dayjs().format("YYYY-MM-DD");
+    let stamina = data.stamina;
+    if (preday !== today) {
+        stamina = 20;
+    }
     DataStore.updateStamina(userid, stamina);
     return stamina;
 }

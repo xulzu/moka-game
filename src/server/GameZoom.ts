@@ -13,6 +13,7 @@ export class GameZoom extends EventEmitter {
   turnIdx: number = 0;
   started = false;
   gameFinish = false;
+  prod = true;
 
   winner_id = "";
   constructor(player1: Player, player2: Player) {
@@ -151,15 +152,17 @@ export class GameZoom extends EventEmitter {
       const winner =
         this.player1.id === this.winner_id ? this.player1 : this.player2;
       const failer = winner.enemy!;
-      DataStore.updateUserScore(winner.id, winner.score);
-      DataStore.updateUserScore(failer.id, failer.score);
-      DataStore.addMatch({
-        player1_id: this.player1.id,
-        player2_id: this.player2.id,
-        winner_id: this.winner_id,
-        score1: this.player1.score,
-        score2: this.player2.score,
-      });
+      if (this.prod) {
+        DataStore.updateUserScore(winner.id, winner.score);
+        DataStore.updateUserScore(failer.id, failer.score);
+        DataStore.addMatch({
+          player1_id: this.player1.id,
+          player2_id: this.player2.id,
+          winner_id: this.winner_id,
+          score1: this.player1.score,
+          score2: this.player2.score,
+        });
+      }
       winner.connect?.gameOver("win", winner.score);
       failer.connect?.gameOver("lose", failer.score);
       winner.connect?.close();
