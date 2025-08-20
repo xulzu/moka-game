@@ -25,6 +25,7 @@
     "dayjs": "^1.11.13",
     "fs-extra": "^11.3.0",
     "gsap": "^3.13.0",
+    "jsonwebtoken": "^9.0.2",
     "koa": "^3.0.0",
     "koa-sse": "^0.1.0",
     "koa-static": "^5.0.0",

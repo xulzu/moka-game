@@ -9,8 +9,7 @@ import { Config } from "./Configs.js";
 import staticServe from "koa-static";
 import NodeCache from "node-cache";
 import dayjs from "dayjs";
-import axios from "axios";
-import { queryAvatar } from "./utils.js";
+import jwt from "jsonwebtoken";
 const GlobalCache = new NodeCache({ stdTTL: 60, checkperiod: 120 });
 class Game {
     constructor() {
@@ -138,15 +137,14 @@ app.use(async (ctx, next) => {
 });
 //认证jwt中间件
 app.use(async (ctx, next) => {
-    const jwt = ctx.cookies.get("bearer") ||
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJQQyIsInN1YiI6IuW-kOemj-WGmyIsImF1ZCI6WyJncm91cCJdLCJleHAiOjE3NTUyNzkzMTcsIm5iZiI6MTc1NTI1NzY1NywiaWF0IjoxNzU1MjU3NzE3LCJqdGkiOiIyMzAyNTAiLCJwaHQiOiJodHRwOi8vZGRjZG4uZWFzdG1vbmV5LmNvbS9pbWFnZS85MzEzMzY4MzYwMjQ0ODM4NC5qcGciLCJhdnQiOiJodHRwczovL2Rvbmdkb25nLWFwaS5lYXN0bW9uZXkuY29tL2Rvbmdkb25nLWNkbi9pbWFnZS8zMTA3Mjk2ODc5ODY1NDgyMjQucG5nIn0.bNwyOkF824QhaEC3uRFRzcGFPLrdNCJXJLi-yBEZqPM";
+    const bearer = ctx.cookies.get("bearer");
     const isDev = Config.DEV;
-    if (!jwt && !isDev) {
+    if (!bearer && !isDev) {
         throw new Error("请先登录");
     }
     let user = "";
-    if (GlobalCache.has(jwt) && !isDev) {
-        user = GlobalCache.get(jwt);
+    if (GlobalCache.has(bearer) && !isDev) {
+        user = GlobalCache.get(bearer);
     }
     else {
         let userid = "";
@@ -164,20 +162,14 @@ app.use(async (ctx, next) => {
             }
         }
         else {
-            const { data } = await axios
-                .get("/api/token/valid", {
-                baseURL: Config.AUTH_URL,
-                timeout: 5 * 1000,
-                params: {
-                    bearer: jwt,
-                },
-            })
-                .catch((err) => {
-                console.error("三方jwt认证服务出错", err);
-                throw new Error("认证出错");
-            });
-            userid = data?.job_number;
-            username = data?.name;
+            try {
+                const payload = jwt.verify(bearer, Config.JWT_SECRET);
+                userid = payload?.jti;
+                username = payload?.sub;
+            }
+            catch (err) {
+                console.error("jwt解析失败", err);
+            }
         }
         if (!userid || !username) {
             throw new Error("认证出错,缺少用户名或工号");
@@ -193,7 +185,7 @@ app.use(async (ctx, next) => {
         }
         user = userid;
         //jwt 和 用户id 缓存10分钟，过期后重新认证，不然每次都http去其他系统认证耗时间
-        GlobalCache.set(jwt, userid, 10 * 60);
+        GlobalCache.set(bearer, userid, 10 * 60);
     }
     ctx.user = user;
     return next();
@@ -202,13 +194,18 @@ app.use(staticServe("static"));
 router.get("/api/init", (ctx) => {
     const userid = ctx.user;
     const self = DataStore.getUser(userid);
-    if (!Config.DEV) {
-        //异步更新头像
-        queryAvatar(userid).then((avatar) => {
+    const bearer = ctx.cookies.get("bearer");
+    if (bearer) {
+        try {
+            const payload = jwt.verify(bearer, Config.JWT_SECRET);
+            const avatar = payload?.avt;
             if (avatar) {
                 DataStore.updateUserAvatar(userid, avatar);
             }
-        });
+        }
+        catch (err) {
+            console.error("jwt解析失败", err);
+        }
     }
     ctx.body = self;
 });

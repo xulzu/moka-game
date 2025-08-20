@@ -20,4 +20,5 @@ export const Config = {
   AUTH_URL,
   SIGN_START_DAY,
   DEV: process.env.NODE_ENV === "development",
+  JWT_SECRET: listen.jwt_secret,
 };
