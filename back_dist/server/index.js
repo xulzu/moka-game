@@ -137,7 +137,7 @@ app.use(async (ctx, next) => {
 });
 //认证jwt中间件
 app.use(async (ctx, next) => {
-    const bearer = ctx.cookies.get("bearer");
+    const bearer = ctx.cookies.get("bearer") || ctx.query.bearer || "test";
     const isDev = Config.DEV;
     if (!bearer && !isDev) {
         throw new Error("请先登录");
@@ -235,7 +235,7 @@ router.get("/sse/pending", async (ctx) => {
         return;
     }
     const stamina = readStamina(user);
-    if (stamina <= 2 && prod) {
+    if (stamina < 2 && prod) {
         ctx.res.write(`event: error\n`);
         ctx.res.write("data: 游玩次数不足\n\n");
         ctx.res.end();
@@ -447,6 +447,9 @@ router.get("/api/signin/status", (ctx) => {
     ctx.body = !!ready;
 });
 router.get("/api/stamina", (ctx) => {
+    ctx.set("Access-Control-Allow-Origin", "*"); // 或指定 http://localhost:8080
+    ctx.set("Access-Control-Allow-Methods", "GET");
+    ctx.set("Access-Control-Allow-Headers", "Content-Type");
     const user = ctx.user;
     const stamina = readStamina(user);
     ctx.body = stamina;

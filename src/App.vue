@@ -6,7 +6,7 @@
     }"
   >
     <div
-      class="relative z-10 h-[100vh] sm:h-[667px] w-[100vw] sm:w-[375px] overflow-auto hide-scrollbar"
+      class="relative z-10 h-[100vh] sm:h-[667px] w-[100vw] sm:w-[375px] overflow-auto hide-scrollbar home"
     >
       <RouterView />
     </div>
@@ -41,10 +41,8 @@ const isMobile = window.isMobile;
 
 .bigbk {
   background-image: url("/assets/bg2025.webp");
-  background-size: cover;
-  background-position: center;
+  background-size: 100% 100%;
   background-repeat: no-repeat;
-  backdrop-filter: brightness(0.5) blur(10px);
 }
 .bigbk::before {
   content: "";
@@ -53,6 +51,8 @@ const isMobile = window.isMobile;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: #171634e0;
+}
+.home {
+  box-shadow: 0 0 13px 7px #6599cd;
 }
 </style>

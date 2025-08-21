@@ -213,6 +213,10 @@
         </div>
       </button>
     </div>
+
+    <div class="absolute bottom-[10px] text-center text-[12px] mt-[30px]">
+      每天只能玩十次哦，今日还能参与{{ stamina >> 1 }}次
+    </div>
   </div>
 </template>
 <script lang="ts" setup>
@@ -228,11 +232,20 @@ const router = useRouter();
 const route = useRoute();
 const testMode = route.query.test === "true";
 const time = ref(0);
+const stamina = ref(10);
 let sseClint: EventSource;
 init();
+loadStamina();
 onBeforeUnmount(() => {
   sseClint?.close();
 });
+async function loadStamina() {
+  try {
+    const { data } = await axios.get("/api/stamina");
+    stamina.value = data || 0;
+  } catch (error) {}
+}
+
 async function init() {
   try {
     const user = localStorage.getItem("user");

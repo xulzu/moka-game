@@ -57,6 +57,16 @@ function format(str: string) {
 }
 async function click() {
   try {
+    if (list.value.every((item) => item.date !== today && item.sigin === 0)) {
+      let next = "";
+      for (let item of list.value) {
+        if (item.date > today && item.sigin === 0) {
+          next = item.date;
+          break;
+        }
+      }
+      throw next ? `今天不在签到日期内，${next}可签到` : "活动已结束";
+    }
     await axios.get("/api/signin");
     showToast("签到成功，获得5积分");
     load();
