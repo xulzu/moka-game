@@ -403,7 +403,15 @@ router.get("/api/test", (ctx) => {
     };
 });
 router.get("/api/debug", (ctx) => {
-    ctx.body = Object.keys(game.getZoom());
+    const zoomSet = new Set();
+    const zoom = game.getZoom();
+    for (const player of Object.values(zoom)) {
+        zoomSet.add(player.room);
+    }
+    ctx.body = {
+        zn: zoomSet.size,
+        qn: game.queue.length,
+    };
 });
 router.get("/api/sigins", (ctx) => {
     const user = ctx.user;

@@ -1,11 +1,12 @@
 const axios = require("axios");
 const { EventSource } = require("eventsource");
-const baseURL = "https://card-battle-security-x.eastmoney.com";
+const baseURL = "https://ctf-dash-security-x.eastmoney.com";
 // const baseURL = "http://localhost:51820";
 axios.defaults.baseURL = baseURL;
-//并发测试
+//400 并发测试
 async function multipleTest() {
-  const ids = new Array(1).fill(0).map((_, i) => "test-" + i);
+  const ids = new Array(400).fill(0).map((_, i) => "w_test-" + i);
+  let completed = 0;
   await Promise.all(
     ids.map(async (user) => {
       try {
@@ -17,7 +18,7 @@ async function multipleTest() {
             user,
           },
         });
-
+        console.log("pending", user);
         const pendSSE = new EventSource(`${baseURL}/sse/pending?user=${user}`, {
           fetch: (input, init) =>
             fetch(input, {
@@ -29,6 +30,9 @@ async function multipleTest() {
             }),
         });
         const tag = await new Promise((res) => {
+          // pendSSE.onopen(() => {
+          //   console.log("pending", user);
+          // });
           pendSSE.onmessage = (e) => {
             res(e.data);
             pendSSE.close();
@@ -48,18 +52,32 @@ async function multipleTest() {
                 }),
             }
           );
+          const waitPromise = {
+            fn: null,
+          };
           await new Promise((res) => {
             gameSSE.onmessage = async (event) => {
               const data = JSON.parse(event.data);
               if (data.type === "gameOver") {
+                completed++;
+                console.log("completed", completed, "/", ids.length);
                 gameSSE.close();
                 res();
               } else if (data.type === "drawEnd") {
-                await tryTwoPlayAttack(user);
-                await tryTwoPlayAttack(user);
+                await new Promise((res_) => {
+                  setTimeout(() => {
+                    res_();
+                  }, 1000);
+                });
+                await tryTwoPlayAttack(user, waitPromise);
+                await tryTwoPlayAttack(user, waitPromise);
                 await endTurn(user);
               } else if (data.type === "waitDefenseCard") {
                 await tryPlayDefense(user);
+              } else if (data.type === "flushAttack") {
+                waitPromise.fn?.();
+              } else if (data.type === "initGame") {
+                console.log("对决开始", `${user} vs ${data.data.enemy.id}`);
               }
             };
           });
@@ -69,7 +87,7 @@ async function multipleTest() {
   );
   console.log("测试结束");
 
-  async function tryTwoPlayAttack(user) {
+  async function tryTwoPlayAttack(user, waitFn) {
     try {
       const ts = Date.now();
       const { data } = await axios.get("/api/test", {
@@ -92,25 +110,17 @@ async function multipleTest() {
           id: attackIds[0],
         },
       });
-      console.log("攻击耗时", Date.now() - ts);
-
-      await new Promise((res) => {
-        //等待攻击结算
-        setTimeout(async () => {
-          try {
-            const { data } = await axios.get("/api/test", {
-              headers: {
-                Cookie: `user=${user};username=${encodeURIComponent(user)}`,
-              },
-            });
-            if (data.danger === -1) {
-              res();
-            }
-          } catch (error) {
-            res();
-          }
-        }, 1000);
+      const { data: data1 } = await axios.get("/api/test", {
+        headers: {
+          Cookie: `user=${user};username=${encodeURIComponent(user)}`,
+        },
       });
+
+      if (data1.danger !== -1) {
+        await new Promise((res) => {
+          waitFn.fn = res;
+        });
+      }
     } catch (error) {}
   }
 
