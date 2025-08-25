@@ -13,6 +13,8 @@ export class GameZoom extends EventEmitter {
   turnIdx: number = 0;
   started = false;
   gameFinish = false;
+  gameFinishPromise: Promise<boolean>;
+  gameFinishResolve: (value: boolean) => void;
   prod = true;
 
   winner_id = "";
@@ -26,6 +28,9 @@ export class GameZoom extends EventEmitter {
       console.log("游戏始终未开始，自动结束");
       this.gameOver();
     }, 30 * 1000);
+    this.gameFinishPromise = new Promise((resolve) => {
+      this.gameFinishResolve = resolve;
+    });
   }
   gameStart() {
     if (this.started) return;
@@ -145,6 +150,7 @@ export class GameZoom extends EventEmitter {
   }
   gameOver() {
     if (this.gameFinish) return;
+    this.gameFinishResolve(true);
     clearInterval(this.timeoutTimer);
     clearInterval(this.waitTimer);
     this.gameFinish = true;

@@ -306,10 +306,12 @@ router.get("/sse/connect", async (ctx) => {
   });
   player.firstConnect = false;
   ctx.req.on("close", () => {
+    closeConnect();
     player.connect = undefined;
   });
   room.gameStart();
   await promise;
+  console.log("gg");
 });
 
 router.get("/api/play", (ctx) => {

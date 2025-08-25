@@ -216,7 +216,7 @@ async function init() {
   if (selfIdx !== -1) {
     self.value = {
       ...list.value[selfIdx],
-      rank: selfIdx,
+      rank: selfIdx + 1,
     };
   } else {
   }
