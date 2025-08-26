@@ -313,6 +313,7 @@ router.get("/sse/connect", async (ctx) => {
     });
     player.firstConnect = false;
     ctx.req.on("close", () => {
+        closeConnect();
         player.connect = undefined;
     });
     room.gameStart();
@@ -461,6 +462,18 @@ router.get("/api/stamina", (ctx) => {
     const user = ctx.user;
     const stamina = readStamina(user);
     ctx.body = stamina;
+});
+router.get("/api/emj", (ctx) => {
+    const user = ctx.user;
+    const player = game.getPlayer(user);
+    if (!player) {
+        ctx.status = 400;
+        ctx.body = "对局不存在";
+        return;
+    }
+    player.connect?.boom(0);
+    player.enemy?.connect?.boom(1);
+    ctx.body = "ok";
 });
 app.use(router.routes());
 app.use(router.allowedMethods());

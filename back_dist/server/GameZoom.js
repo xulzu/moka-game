@@ -63,6 +63,18 @@ export class GameZoom extends EventEmitter {
             writable: true,
             value: false
         });
+        Object.defineProperty(this, "gameFinishPromise", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "gameFinishResolve", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         Object.defineProperty(this, "prod", {
             enumerable: true,
             configurable: true,
@@ -83,6 +95,9 @@ export class GameZoom extends EventEmitter {
             console.log("游戏始终未开始，自动结束");
             this.gameOver();
         }, 30 * 1000);
+        this.gameFinishPromise = new Promise((resolve) => {
+            this.gameFinishResolve = resolve;
+        });
     }
     gameStart() {
         if (this.started)
@@ -208,6 +223,7 @@ export class GameZoom extends EventEmitter {
     gameOver() {
         if (this.gameFinish)
             return;
+        this.gameFinishResolve(true);
         clearInterval(this.timeoutTimer);
         clearInterval(this.waitTimer);
         this.gameFinish = true;

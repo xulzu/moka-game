@@ -2,6 +2,7 @@ import { Assets, Container, Graphics, Sprite, Text } from "pixi.js";
 import gsap from "gsap";
 import { GameManager } from "./GameManager";
 import mitt from "mitt";
+import { throttle } from "lodash-es";
 import axios from "axios";
 
 export class Health extends Container {
@@ -15,6 +16,9 @@ export class Health extends Container {
   boomContainer: Sprite;
   boomGasp?: any;
   bgContainer: Container;
+  sendEmj = throttle(() => {
+    axios.get("/api/emj");
+  }, 500);
   constructor() {
     super();
     const bgContainer = new Container();
@@ -133,7 +137,7 @@ export class Health extends Container {
       this.interactive = true;
       //发送表情
       this.on("pointerdown", () => {
-        axios.get("/api/emj");
+        this.sendEmj();
       });
     }
   }

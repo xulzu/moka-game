@@ -12,8 +12,8 @@ export class Emj extends Container {
     this.boom1Container = new Container();
     this.boom2Container = new Container();
     this.addChild(this.boom1Container, this.boom2Container);
-    this.showBoom1();
-    this.showBoom2();
+    // this.showBoom1();
+    // this.showBoom2();
   }
 
   showBoom1() {

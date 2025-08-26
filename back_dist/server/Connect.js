@@ -142,6 +142,12 @@ export class Connect {
             lastTempDefense,
         }));
     }
+    boom(role) {
+        this.res.send(JSON.stringify({
+            type: "boom",
+            data: role,
+        }));
+    }
     //回合结束
     turnEnd() {
         this.res.send(JSON.stringify({

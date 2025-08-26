@@ -311,7 +311,6 @@ router.get("/sse/connect", async (ctx) => {
   });
   room.gameStart();
   await promise;
-  console.log("gg");
 });
 
 router.get("/api/play", (ctx) => {
