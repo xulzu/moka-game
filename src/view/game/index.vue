@@ -269,6 +269,12 @@ onMounted(() => {
       } else if (data.type === "defenseUpdate") {
         const { id, lastTempDefense } = data;
         gameManager.defenseUpdate(id, lastTempDefense);
+      } else if (data.type === "boom") {
+        if (data.data === 0) {
+          gameManager.emjZone.showBoom1();
+        } else if (data.data === 1) {
+          gameManager.emjZone.showBoom2();
+        }
       } else if (data.type === "gameOver") {
         win.value = data.data;
         score.value = data.score;

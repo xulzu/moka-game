@@ -25,6 +25,7 @@ import { WaitDefenseZone } from "./WaitDefenseZone";
 import { PlayAnimation } from "./PlayAnimation";
 import { UserNmaeZone } from "./UserNameZone";
 import { showToast } from "vant";
+import { Emj } from "./Emj";
 
 export class GameManager {
   static instance: GameManager;
@@ -44,6 +45,7 @@ export class GameManager {
   nameZoneP1: UserNmaeZone;
   nameZoneP2: UserNmaeZone;
   waitDefenseZone: WaitDefenseZone;
+  emjZone: Emj;
   stackP1: Stack;
   stackP2: Stack;
   playAnimation: PlayAnimation;
@@ -105,6 +107,11 @@ export class GameManager {
       this.healthZoneP2.y = 120;
 
       app.stage.addChild(this.healthZoneP1, this.healthZoneP2);
+    }
+    {
+      //表情
+      this.emjZone = new Emj();
+      app.stage.addChild(this.emjZone);
     }
     {
       // 回合指示区;

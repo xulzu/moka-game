@@ -2,6 +2,7 @@ import { Assets, Container, Graphics, Sprite, Text } from "pixi.js";
 import gsap from "gsap";
 import { GameManager } from "./GameManager";
 import mitt from "mitt";
+import axios from "axios";
 
 export class Health extends Container {
   static width = 70;
@@ -128,6 +129,13 @@ export class Health extends Container {
     this.addChild(this.dangerContainer);
 
     this.updateHealth(15);
+    {
+      this.interactive = true;
+      //发送表情
+      this.on("pointerdown", () => {
+        axios.get("/api/emj");
+      });
+    }
   }
 
   async updateAvatar(img: string) {

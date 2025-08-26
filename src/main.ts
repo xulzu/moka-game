@@ -7,6 +7,7 @@ import { Toast } from "vant";
 import * as PIXI from "pixi.js";
 import { gsap } from "gsap";
 import { PixiPlugin } from "gsap/PixiPlugin";
+import { MotionPathPlugin } from "gsap/MotionPathPlugin";
 import axios from "axios";
 const isMobile = isMobileView();
 window.isMobile = isMobile;
@@ -18,7 +19,7 @@ axios.interceptors.response.use(
     return Promise.reject(error?.response?.data);
   }
 );
-
+gsap.registerPlugin(MotionPathPlugin);
 gsap.registerPlugin(PixiPlugin);
 PixiPlugin.registerPIXI(PIXI);
 createApp(App).use(router).use(Toast).mount("#app");

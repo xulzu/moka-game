@@ -204,6 +204,14 @@ export class Connect {
       })
     );
   }
+  boom(role: 0 | 1) {
+    this.res.send(
+      JSON.stringify({
+        type: "boom",
+        data: role,
+      })
+    );
+  }
   //回合结束
   turnEnd() {
     this.res.send(

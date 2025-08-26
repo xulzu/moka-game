@@ -150,5 +150,9 @@ export async function loadAssets() {
       alias: "card-bg",
       src: "/assets/card-bg.webp",
     },
+    {
+      alias: "boom1",
+      src: "/assets/boom1.webp",
+    },
   ]);
 }
