@@ -1,7 +1,7 @@
 # 项目说明
 
 back_dist/ 包含前后端的构建产物，源码部署时用这个目录
-scp -r back_dist/* root@1.94.151.122:/root/game/
+
 * npm run start              //给编译后的代码启动游戏用的，开发阶段用不着
 * npm run serve              //开发阶段启动前端
 * npm run back               //开发阶段启动后端
@@ -9,7 +9,10 @@ scp -r back_dist/* root@1.94.151.122:/root/game/
 * npm run build-front        //仅构建前端
 * npm run build-back         //只构建后端
  
- 
+
+# 游戏截图
+
+![游戏截图](docs/game.gif)
 
 # 游戏说明
 1. 1v1卡牌对战规则
