@@ -6,7 +6,7 @@ const cards = JSON.parse(
   })
 );
 const listen = JSON.parse(
-  fs.readFileSync("./config/listen.json", {
+  fs.readFileSync("./config/config.json", {
     encoding: "utf-8",
   })
 );
@@ -21,4 +21,5 @@ export const Config = {
   SIGN_START_DAY,
   DEV: process.env.NODE_ENV === "development",
   JWT_SECRET: listen.jwt_secret,
+  ADMIN: listen.admin as string[],
 };

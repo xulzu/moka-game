@@ -86,6 +86,17 @@ const last1Matche = db.prepare(`
   ORDER BY datetime(created_at) DESC
   LIMIT 1
 `);
+function runTransaction<T>(callback: () => T): T {
+  try {
+    db.exec("BEGIN TRANSACTION");
+    const res = callback();
+    db.exec("COMMIT");
+    return res;
+  } catch (err) {
+    db.exec("ROLLBACK");
+    throw err;
+  }
+}
 function addUser(user: {
   userid: string;
   name: string;
@@ -115,6 +126,32 @@ function updateUserAvatar(userid: string, avatar: string) {
 }
 function getTopUsers() {
   return topUsers.all();
+}
+function getUsers() {
+  return db
+    .prepare(
+      `
+   SELECT u.*, 
+           IFNULL(p.stamina, 0) AS stamina, 
+           p.last_update
+    FROM users u
+    LEFT JOIN player_stamina p
+    ON u.userid = p.player_id
+    WHERE u.userid != 'roobot'
+    ORDER BY u.score DESC
+  `
+    )
+    .all();
+}
+function deleteUser(userid: string) {
+  runTransaction(() => {
+    db.prepare(
+      `delete from matches where player1_id = ? or player2_id = ?`
+    ).run(userid, userid);
+    db.prepare(`delete from users where userid = ?`).run(userid);
+    db.prepare(`delete from signins where userid = ?`).run(userid);
+    db.prepare(`delete from player_stamina where player_id = ?`).run(userid);
+  });
 }
 function addMatch(match: {
   player1_id: string;
@@ -194,6 +231,33 @@ function addStamina(userid: string, stamina: number) {
   `
   ).run(userid, stamina, currentTime);
 }
+
+function getMatches(page: number, pageSize: number, keyword = "") {
+  const params = { pageSize, offset: (page - 1) * pageSize };
+  const keywordParams = keyword ? { keyword } : {};
+  const where = keyword
+    ? `WHERE player1_id = @keyword OR player2_id = @keyword`
+    : ``;
+  const total = db
+    .prepare(
+      `
+    SELECT COUNT(*) t FROM matches ${where}
+  `
+    )
+    .get(keywordParams);
+  const data = db
+    .prepare(
+      `
+  SELECT * FROM matches ${where}
+  ORDER BY datetime(created_at) DESC LIMIT @pageSize OFFSET @offset
+`
+    )
+    .all({ ...params, ...keywordParams });
+  return {
+    total: total.t || 0,
+    data: data || [],
+  };
+}
 export const DataStore = {
   addUser,
   getUser,
@@ -210,4 +274,7 @@ export const DataStore = {
   getStamina,
   updateStamina,
   addStamina,
+  getUsers,
+  deleteUser,
+  getMatches,
 };

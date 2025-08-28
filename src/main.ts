@@ -1,5 +1,6 @@
 import { createApp } from "vue";
 import "vant/lib/index.css";
+import "ant-design-vue/dist/reset.css";
 import "./style/index.css";
 import App from "./App.vue";
 import router from "./router";
